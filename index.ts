@@ -1,9 +1,18 @@
-import { Lexer } from "./lexer";
+import Parser from "./src/parser";
 
-const source = "MUGNA NUMERO x = 10, y = 20";
-const lexer = new Lexer(source);
-const tokens = lexer.tokenize();
+async function repl() {
 
-for (const token of tokens) {
-    console.log(token);
+    const parser = new Parser();
+    console.log("\nRepl v0.1");
+
+    while (true) {
+        const input = prompt("> ");
+
+        if(!input || input.includes("exit")) {
+            Deno.exit(1)
+        }
+
+        const program = parser.produceAST(input);
+        console.log(program);
+    }
 }

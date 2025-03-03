@@ -1,4 +1,4 @@
-import { TokenType } from "./utils/TokenType";
+import { TokenType } from "../utils/TokenType";
 
 const RESERVED_KEYWORDS = ["NUMERO", "LETRA", "TIPIK", "TINOUD"];
 
@@ -12,8 +12,13 @@ export class Lexer {
     private position: number = 0;
     private tokens: Token[] = [];
 
-    constructor(input: string) {
+    constructor(input: string = "") {
         this.input = input;
+    }
+
+    public setInput(input: string) {
+        this.input = input;
+        this.position = 0;
     }
 
     public tokenize() : Token[] {
@@ -26,6 +31,7 @@ export class Lexer {
                 continue;
             }
 
+            // check for comma
             if (char === ",") {
                 this.tokens.push({ type: TokenType.Comma, value: ","});
                 this.position++;
@@ -89,6 +95,7 @@ export class Lexer {
 
         }
 
+        this.tokens.push({ type: TokenType.EOF, value: "EndOfFile" });
         return this.tokens;
     }
 }

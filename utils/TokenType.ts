@@ -37,4 +37,5 @@ export enum TokenType {
     Number,
     OpenParen,
     CloseParen,
+    EOF
 }
