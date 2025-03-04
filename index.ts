@@ -1,18 +1,29 @@
+import * as readline from "readline";
 import Parser from "./src/parser";
 
-async function repl() {
 
-    const parser = new Parser();
-    console.log("\nRepl v0.1");
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-    while (true) {
-        const input = prompt("> ");
+console.log("\nBISAYA++ Repl v0.1 - HEHE");
 
-        if(!input || input.includes("exit")) {
-            Deno.exit(1)
+function repl() {
+    rl.question("> ", (input) => {
+        if (!input || input.includes("exit")) {
+            console.log("👋 Goodbye!");
+            rl.close();
+            process.exit(1);
         }
 
-        const program = parser.produceAST(input);
+        const parser = new Parser(input);
+        const program = parser.produceAST();
+
+        console.log(parser.tokens);
         console.log(program);
-    }
+        repl();
+    });
 }
+
+repl();

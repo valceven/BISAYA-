@@ -85,7 +85,7 @@ export class Lexer {
                 continue;
             }
 
-            if ("+-*/".indexOf(char) !== -1) {
+            if ("+-*/%".indexOf(char) !== -1) {
                 this.tokens.push({ type: TokenType.Operator, value: char});
                 this.position++;
                 continue
