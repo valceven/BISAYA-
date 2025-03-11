@@ -1,6 +1,6 @@
 import { TokenType } from "../utils/TokenType";
 
-const RESERVED_KEYWORDS = ["NUMERO", "LETRA", "TIPIK", "TINOUD"];
+const RESERVED_KEYWORDS = ["NUMERO", "LETRA", "TIPIK", "TINOUD", "WALA"];
 
 export interface Token {
     value: string,

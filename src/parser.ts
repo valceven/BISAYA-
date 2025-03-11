@@ -4,7 +4,8 @@ import {
     Expression, 
     BinaryExpression, 
     NumericLiteral, 
-    Identifier 
+    Identifier,
+    NullLiteral
 } from "./ast";
 import { Lexer, Token } from "./lexer";
 import { TokenType } from "../utils/TokenType";
@@ -30,12 +31,11 @@ export default class Parser {
 
     private expect(type: TokenType, errorMessage: string): Token{
         const prev = this.consume();
-        console.log(prev)
         if(!prev || prev.type !== type) {
             throw new Error(`Parser Error: \n ${errorMessage} ${prev} Expecting: ${type}`);
         }
 
-        return this.consume();
+        return prev;
     }
 
     public produceAST(): Program {
@@ -47,9 +47,9 @@ export default class Parser {
 
     private parseStatements(): Statement[] {
 
-        let statements: Statement[] = []
+        let statements: Statement[] = [];
 
-        while(this.peek().type != TokenType.EOF) {
+        while(this.peek().type !== TokenType.EOF) {
             statements.push(this.parseExpression());
         }
 
@@ -111,6 +111,13 @@ export default class Parser {
         const token = this.consume();
 
         switch (token.type) {
+            case TokenType.Wala: {
+                this.consume();
+                return {
+                    kind: "NullLiteral",
+                    value: "wala"
+                } as NullLiteral;
+            }
             case TokenType.Identifier: {
                 return { 
                     kind: "Identifier", 
@@ -124,7 +131,6 @@ export default class Parser {
                 } as NumericLiteral;
             }
             case TokenType.OpenParen: {
-                this.consume();
                 const value = this.parseExpression();
                 this.expect(TokenType.CloseParen, "Expected Closing Parenthesis!");
                 return value

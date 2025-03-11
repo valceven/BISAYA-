@@ -1,5 +1,6 @@
 import * as readline from "readline";
 import Parser from "./src/parser";
+import { SemanticAnalyzer } from "./src/analyzer";
 
 
 const rl = readline.createInterface({
@@ -17,11 +18,19 @@ function repl() {
             process.exit(1);
         }
 
-        const parser = new Parser(input);
-        const program = parser.produceAST();
+        try {
+            const parser = new Parser(input);
+            const program = parser.produceAST();
 
-        console.log(parser.tokens);
-        console.log(program);
+            console.log(parser.tokens);
+            console.log(program);
+
+            const analyzer = new SemanticAnalyzer(program);
+            
+        } catch (error) {
+            console.error("Error:", error.message);
+        }
+
         repl();
     });
 }

@@ -2,7 +2,6 @@
 
     lexer def - bsta lexer
 
-
     <var-declaration> ::= "MUGNA" <type-name> <identifier-list>
 
     <type-name> ::= "NUMERO" | "LETRA" | "TINOUD" | "TIPIK"
@@ -37,5 +36,6 @@ export enum TokenType {
     Number,
     OpenParen,
     CloseParen,
+    Wala,
     EOF
 }

@@ -5,7 +5,8 @@ export type NodeType =
     "BinaryExpression" |
     "CallExpression" |
     "UnaryExpression" |
-    "FunctionDeclaration";
+    "FunctionDeclaration" |
+    "NullLiteral";
 
 export interface ASTNode {
     kind: NodeType;

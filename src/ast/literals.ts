@@ -9,3 +9,8 @@ export interface NumericLiteral extends Expression {
     kind: "NumericLiteral";
     value: number;
 }
+
+export interface NullLiteral extends Expression {
+    kind: "NullLiteral";
+    value: "wala";
+}
