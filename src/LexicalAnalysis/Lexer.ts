@@ -1,4 +1,5 @@
-import { TokenType } from "../../../utils/TokenType";
+import { KEYWORDS } from "../../utils/Keywords";
+import { TokenType } from "../../utils/TokenType";
 import { Token } from "./Token";
 
 export class Lexer {
@@ -25,6 +26,7 @@ export class Lexer {
 
     private isAtEnd(): boolean {
         return this.current >= this.sourceCode.length;
+        
     }
 
     private scanToken(): void {
@@ -38,8 +40,15 @@ export class Lexer {
             case '-': this.addToken(TokenType.Minus); break;
             case '+': this.addToken(TokenType.Plus); break;
             case '*': this.addToken(TokenType.Star); break;
-            case '/': this.addToken(TokenType.Slash); break;
             case '%': this.addToken(TokenType.Modulo); break;
+
+            case '/': 
+                if (this.match('/')) {
+                    while(this.peek() != '\n' && !this.isAtEnd()) this.advance();
+                } else {
+                    this.addToken(TokenType.Slash);
+                }
+                break;
     
             case '<': 
                 if (this.match('=')) {
@@ -83,7 +92,7 @@ export class Lexer {
             default:
                 if (this.isDigit(c)) {
                     this.number();
-                } else if (isAlpha(c)) {
+                } else if (this.isAlpha(c)) {
                     this.identifier(); 
                 }else {
                     console.error(this.line, "Wala ko kibaw ani linyaha bai.");
@@ -108,7 +117,7 @@ export class Lexer {
         return true;
     }
 
-    private peek() {
+    private peek(): string {
         if (this.isAtEnd()) return '\0';
         return this.sourceCode.charAt(this.current);
     }
@@ -124,7 +133,7 @@ export class Lexer {
             this.advance();
         }
 
-        if (this.isAtEnd) {
+        if (this.isAtEnd()) {
             console.error(this.line, "WAKOKIBAW ANI NA STRING BAI");
             return;
         }
@@ -149,5 +158,22 @@ export class Lexer {
         }
 
         this.addToken(TokenType.Number, parseFloat(this.sourceCode.substring(this.start, this.current)));
+    }
+
+    private identifier() {
+        while(this.isAlphaNumeric(this.peek())) this.advance();
+
+        const text: string = this.sourceCode.substring(this.start, this.current);
+        const type: TokenType = KEYWORDS.get(text) && TokenType.Identifier;
+        
+        this.addToken(type);
+    }
+
+    private isAlpha(c: string): boolean {
+        return /^[a-zA-Z_]$/.test(c);
+    }
+
+    private isAlphaNumeric(c: string): boolean {
+        return this.isAlpha(c) || this.isDigit(c);
     }
 }

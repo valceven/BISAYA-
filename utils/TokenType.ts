@@ -29,14 +29,14 @@ export enum TokenType {
 
     //Single Character Tokens.
     OpenParen, CloseParen, Comma, 
-    Dot, Minus, Plus, Slash, Star, Modulo,
+    Dot, Minus, Plus, Slash, Star, Modulo, //8
 
     // One or two Character Tokens
     Lesser, Greater, LesserEqual, Assign,
-    GreaterEqual, EqualEqual, NotEqual,
+    GreaterEqual, EqualEqual, NotEqual, //15
 
     // Literals.
-    Identifier, String, Number,
+    Identifier, String, Number, //18
 
     // Keywords.
     UG, O, DILI, MUGNA, SUGOD, KATAPUSAN,

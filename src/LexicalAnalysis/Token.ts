@@ -1,4 +1,4 @@
-import { TokenType } from "../../../utils/TokenType";
+import { TokenType } from "../../utils/TokenType";
 
 
 export class Token {
