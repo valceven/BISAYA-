@@ -26,16 +26,22 @@
 */
 
 export enum TokenType {
-    Mugna,
-    TypeName,
-    Identifier,
-    Assign,
-    Operator,
-    Comma,
-    Letter,
-    Number,
-    OpenParen,
-    CloseParen,
-    Wala,
-    EOF
-}
+
+    //Single Character Tokens.
+    OpenParen, CloseParen, Comma, 
+    Dot, Minus, Plus, Slash, Star, Modulo,
+
+    // One or two Character Tokens
+    Lesser, Greater, LesserEqual, Assign,
+    GreaterEqual, EqualEqual, NotEqual,
+
+    // Literals.
+    Identifier, String, Number,
+
+    // Keywords.
+    UG, O, DILI, MUGNA, SUGOD, KATAPUSAN,
+    IPAKITA, DAWAT,
+    KUNG, PUNDOK, KUNGWALA, KUNGDILI,
+    ALANGSA, WALA, EOF
+
+};

@@ -7,7 +7,7 @@ import {
     Identifier,
     NullLiteral
 } from "./ast";
-import { Lexer, Token } from "./lexer";
+import { Lexer, Token } from "./ast/LexicalAnalysis/lexer";
 import { TokenType } from "../utils/TokenType";
 
 
