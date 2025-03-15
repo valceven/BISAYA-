@@ -1,6 +1,7 @@
 import * as readline from "readline";
-import { Token } from "./src/LexicalAnalysis/Token";
 import { Lexer } from "./src/LexicalAnalysis/Lexer";
+import { Parser } from "./src/SyntaxAnalysis/Parser";
+import { Expression } from "./src/SyntaxAnalysis/expressions";
 // import Parser from "./src/parser";
 // import { SemanticAnalyzer } from "./src/analyzer";
 
@@ -31,8 +32,11 @@ function repl() {
 
             const lexer = new Lexer(input);
             const tokens = lexer.tokenize();
+            const parser = new Parser(tokens);
+            const expression: Expression = parser.parse();
 
-            console.log(tokens);
+            //console.log(tokens);
+            console.log(expression);
             
         } catch (error) {
             console.error("Error:", error.message);

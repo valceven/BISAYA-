@@ -1,144 +1,170 @@
-import { 
-    Statement, 
-    Program, 
-    Expression, 
-    BinaryExpression, 
-    NumericLiteral, 
-    Identifier,
-    NullLiteral
-} from "./ast";
-import { Lexer, Token } from "./LexicalAnalysis/Lexer";
-import { TokenType } from "../utils/TokenType";
+import { ParseError } from "../../utils/ParseError";
+import { TokenType } from "../../utils/TokenType";
+import { Token } from "../LexicalAnalysis/Token";
+import { Binary, Unary, Literal, Grouping } from "./expressions";
+import { Expression } from "./expressions";
 
+export class Parser {
+    tokens: Token[];
+    current: number = 0;
 
-export default class Parser {
+    constructor(tokens: Token[]) {
+        this.tokens = tokens;
+    }
 
-    public tokens: Token[] = [];
-    private position: number = 0;
+    parse(): Expression {
+        try {
+            return this.expression();
+        } catch (error: any) {
+            return null;
+        }
+    }
 
-    constructor(sourceCode: string = "") {
-        const lexer = new Lexer(sourceCode);
-        this.tokens = lexer.tokenize();
+    private expression(): Expression {
+        return this.equality();
+    }
+
+    private equality(): Expression {
+        let expr: Expression = this.comparison();
+
+        while(this.match(TokenType.NotEqual, TokenType.EqualEqual)) {
+            let operator: Token = this.previous();
+            let right: Expression = this.comparison();
+            expr = new Binary(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private match(...types: TokenType[]): boolean {
+        for (let type of types) {
+            if (this.check(type)) {
+                this.advance();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private check(type: TokenType): boolean {
+        if (this.isAtEnd()) return false;
+
+        return this.peek().type === type;
+    }
+
+    private advance(): Token {
+        if (!this.isAtEnd()) this.current++;
+        return this.previous();
+    }
+
+    private isAtEnd(): boolean {
+        return this.peek().type === TokenType.EOF;
     }
 
     private peek(): Token {
-        return this.tokens[this.position];
+        return this.tokens[this.current];
     }
 
-    private consume(): Token {
-        return this.tokens[this.position++];
+    private previous(): any {
+        return this.tokens[this.current - 1];
     }
 
-    private expect(type: TokenType, errorMessage: string): Token{
-        const prev = this.consume();
-        if(!prev || prev.type !== type) {
-            throw new Error(`Parser Error: \n ${errorMessage} ${prev} Expecting: ${type}`);
+    private comparison(): Expression {
+       let expr: Expression = this.term();
+
+       while(this.match(TokenType.Greater, TokenType.GreaterEqual, TokenType.Lesser, TokenType.LesserEqual)) {
+        let operator: Token = this.previous();
+        let right: Expression = this.term();
+        expr = new Binary(expr, operator, right);
+       }
+
+       return expr;
+    }
+
+    private term(): Expression {
+        let expr: Expression = this.factor();
+
+        while (this.match(TokenType.Minus, TokenType.Plus)) {
+            let operator: Token = this.previous();
+            let right: Expression = this.factor();
+            expr = new Binary(expr, operator, right);
         }
 
-        return prev;
+        return expr;
     }
 
-    public produceAST(): Program {
-        return {
-            kind: "Program",
-            body: this.parseStatements(),
-        }
-    }
+    private factor(): Expression {
+        let expr: Expression = this.unary();
 
-    private parseStatements(): Statement[] {
-
-        let statements: Statement[] = [];
-
-        while(this.peek().type !== TokenType.EOF) {
-            statements.push(this.parseExpression());
+        while(this.match(TokenType.Slash, TokenType.Star)) {
+            let operator: Token = this.previous();
+            let right: Expression = this.unary();
+            expr = new Binary(expr, operator, right);
         }
 
-        return statements;
+        return expr;
     }
 
-    private parseExpression(): Expression {
-        return this.parseAdditiveExpression();
-    }
-
-    // orders of presidence - 
-    // assignment
-    // member
-    // function
-    // logical
-    // comparison
-    // additive, 
-    // multiplication, 
-    // unary, 
-    // primary 
-
-
-    // 10 + 5 - 5
-    private parseAdditiveExpression(): Expression {
-        let left = this.parseMultiplicativeExpression();
-
-        while(this.peek().value === "+" || this.peek().value === "-") {
-            const operator = this.consume().value;
-            const right = this.parseMultiplicativeExpression();
-            left = {
-                kind: "BinaryExpression",
-                left,
-                right, 
-                operator,
-            } as BinaryExpression;
+    private unary(): Expression {
+        if (this.match(TokenType.Bang, TokenType.Minus)) {
+            let operator: Token = this.previous();
+            let right: Expression = this.unary();
+            return new Unary(operator, right);
         }
 
-        return left;
+        return this.primary();
     }
 
-    private parseMultiplicativeExpression(): Expression {
-        let left = this.parsePrimaryExpression();
-
-        while(this.peek().value === "*" || this.peek().value === "/" || this.peek().value === "%") {
-            const operator = this.consume().value;
-            const right = this.parsePrimaryExpression();
-            left = {
-                kind: "BinaryExpression",
-                left,
-                right, 
-                operator,
-            } as BinaryExpression;
+    private primary(): Expression {
+        if (this.match(TokenType.DILI)) return new Literal(false);
+        if (this.match(TokenType.NAA)) return new Literal(true);
+        if (this.match(TokenType.WALA)) return new Literal(null);
+    
+        if (this.match(TokenType.Number, TokenType.String)) {
+            return new Literal(this.previous().literal);
+        }
+    
+        if (this.match(TokenType.OpenParen)) {
+            let expr: Expression = this.expression();
+            this.consume(TokenType.CloseParen, "Expect ')' after expression.");
+            return new Grouping(expr);
         }
 
-        return left;
+        throw this.error(this.peek(), "Expect Expression");
     }
 
-    private parsePrimaryExpression(): Expression {
-        const token = this.consume();
+    private consume(type: TokenType, message: string): Token {
+        if (this.check(type)) return this.advance();
 
-        switch (token.type) {
-            case TokenType.Wala: {
-                this.consume();
-                return {
-                    kind: "NullLiteral",
-                    value: "wala"
-                } as NullLiteral;
+        throw this.error(this.peek(), message);
+    }
+
+    private error(token: Token, message: string): ParseError {
+        console.error(token, message);
+        return new ParseError();
+    }
+
+    private synchronize(): void {
+        this.advance();
+
+        while (!this.isAtEnd()) {
+            if (this.previous().type === TokenType.NEWLINE) return;
+
+            switch(this.peek().type) {
+                case TokenType.MUGNA:
+                case TokenType.SUGOD:
+                case TokenType.KATAPUSAN:
+                case TokenType.IPAKITA:
+                case TokenType.DAWAT:
+                case TokenType.PUNDOK:
+                case TokenType.KUNG:
+                case TokenType.KUNGWALA:
+                case TokenType.KUNGDILI:
+                case TokenType.ALANGSA:
+                    return;
             }
-            case TokenType.Identifier: {
-                return { 
-                    kind: "Identifier", 
-                    symbol: token.value 
-                } as Identifier;
-            }
-            case TokenType.Number: {
-                return { 
-                    kind: "NumericLiteral", 
-                    value: Number(token.value) 
-                } as NumericLiteral;
-            }
-            case TokenType.OpenParen: {
-                const value = this.parseExpression();
-                this.expect(TokenType.CloseParen, "Expected Closing Parenthesis!");
-                return value
-            }
-                
-            default: 
-                console.error(`Unexpected token found during parsing! ${this.peek()}`);
-        }     
-    } 
+
+            this.advance();
+        }
+    }
 }
-

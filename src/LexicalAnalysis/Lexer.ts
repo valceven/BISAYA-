@@ -76,6 +76,8 @@ export class Lexer {
                 }
                 break;
 
+            case '!': this.addToken(TokenType.Bang); break;
+
             case ' ':
             case '\t':
             case '\r':
@@ -83,6 +85,7 @@ export class Lexer {
 
             case '\n':
                 this.line++;
+                this.addToken(TokenType.NEWLINE);
                 break;
 
             case '"':
@@ -164,7 +167,7 @@ export class Lexer {
         while(this.isAlphaNumeric(this.peek())) this.advance();
 
         const text: string = this.sourceCode.substring(this.start, this.current);
-        const type: TokenType = KEYWORDS.get(text) && TokenType.Identifier;
+        const type: TokenType = KEYWORDS.get(text) || TokenType.Identifier;
         
         this.addToken(type);
     }

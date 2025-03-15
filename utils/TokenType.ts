@@ -28,20 +28,20 @@
 export enum TokenType {
 
     //Single Character Tokens.
-    OpenParen, CloseParen, Comma, 
-    Dot, Minus, Plus, Slash, Star, Modulo, //8
+    OpenParen, CloseParen, Comma, Bang,
+    Dot, Minus, Plus, Slash, Star, Modulo, //9
 
     // One or two Character Tokens
     Lesser, Greater, LesserEqual, Assign,
-    GreaterEqual, EqualEqual, NotEqual, //15
+    GreaterEqual, EqualEqual, NotEqual, //16
 
     // Literals.
-    Identifier, String, Number, //18
+    Identifier, String, Number, //19
 
     // Keywords.
     UG, O, DILI, MUGNA, SUGOD, KATAPUSAN,
     IPAKITA, DAWAT,
     KUNG, PUNDOK, KUNGWALA, KUNGDILI,
-    ALANGSA, WALA, EOF
+    ALANGSA, WALA, EOF, NAA, NEWLINE
 
 };
