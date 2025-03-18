@@ -1,6 +1,5 @@
 import { TokenType } from "../../utils/TokenType";
 
-
 export class Token {
     type: TokenType;
     lexeme: string;

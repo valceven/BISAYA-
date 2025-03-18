@@ -35,7 +35,7 @@ function repl() {
             const parser = new Parser(tokens);
             const expression: Expression = parser.parse();
 
-            //console.log(tokens);
+            console.log(tokens);
             console.log(expression);
             
         } catch (error) {
