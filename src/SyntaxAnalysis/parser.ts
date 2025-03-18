@@ -1,8 +1,7 @@
 import { ParseError } from "../../utils/ParseError";
 import { TokenType } from "../../utils/TokenType";
 import { Token } from "../LexicalAnalysis/Token";
-import { Binary, Unary, Literal, Grouping } from "./expressions";
-import { Expression } from "./expressions";
+import { Binary, Unary, Literal, Grouping, Expression} from "./Expressions";
 
 export class Parser {
     tokens: Token[];

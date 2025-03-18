@@ -1,9 +1,8 @@
 import * as readline from "readline";
 import { Lexer } from "./src/LexicalAnalysis/Lexer";
 import { Parser } from "./src/SyntaxAnalysis/Parser";
-import { Expression } from "./src/SyntaxAnalysis/expressions";
-// import Parser from "./src/parser";
-// import { SemanticAnalyzer } from "./src/analyzer";
+import { Expression } from "./src/SyntaxAnalysis/Expressions";
+import { Interpreter } from "./src/SyntaxAnalysis/Interpreter";
 
 
 const rl = readline.createInterface({
@@ -12,6 +11,8 @@ const rl = readline.createInterface({
 });
 
 console.log("\nBISAYA++ Repl v0.1 - HEHE");
+
+const interpreter = new Interpreter();
 
 function repl() {
     rl.question("> ", (input) => {
@@ -35,8 +36,10 @@ function repl() {
             const parser = new Parser(tokens);
             const expression: Expression = parser.parse();
 
-            console.log(tokens);
-            console.log(expression);
+            console.log("Tokens:", tokens);
+            console.log("AST:", expression);
+
+            const result = interpreter.interpret(expression);
             
         } catch (error) {
             console.error("Error:", error.message);

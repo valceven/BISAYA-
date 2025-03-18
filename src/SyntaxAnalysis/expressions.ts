@@ -1,12 +1,8 @@
 import { Token } from "../LexicalAnalysis/Token";
 
-export abstract class Expression {
-    static Literal: any;
-    static Grouping: any;
-    static Binary: any;
-    static Unary: any;
-}
+export abstract class Expression {}
 
+// Binary expression (e.g., `1 + 2`)
 export class Binary extends Expression {
     left: Expression;
     operator: Token;
@@ -20,6 +16,7 @@ export class Binary extends Expression {
     }
 }
 
+// Unary expression (e.g., `-5`)
 export class Unary extends Expression {
     operator: Token;
     right: Expression;
@@ -28,9 +25,10 @@ export class Unary extends Expression {
         super();
         this.operator = operator;
         this.right = right;
-    } 
+    }
 }
 
+// Literal expression (e.g., numbers, strings)
 export class Literal extends Expression {
     value: any;
 
@@ -40,6 +38,7 @@ export class Literal extends Expression {
     }
 }
 
+// Grouping expression (e.g., `(1 + 2)`)
 export class Grouping extends Expression {
     expression: Expression;
 
