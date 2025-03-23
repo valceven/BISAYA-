@@ -24,14 +24,6 @@ function repl() {
         }
 
         try {
-            // const parser = new Parser(input);
-            // const program = parser.produceAST();
-
-            // console.log(parser.tokens);
-            // console.log(program);
-
-            // const analyzer = new SemanticAnalyzer(program);
-
             const lexer = new Lexer(input);
             const tokens = lexer.tokenize();
             const parser = new Parser(tokens);

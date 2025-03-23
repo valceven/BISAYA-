@@ -1,8 +1,12 @@
-import { Binary, Expression, Grouping, Literal, Unary } from "./Expressions";
+import { Assign, Binary, Expression, Grouping, Literal, Unary, Variable } from "./Expressions";
 import { TokenType } from "../../utils/TokenType";
 import { Block, ExpressionStatement, Print, Statement, VariableDeclaration } from "./Statements";
+import { Environment } from "../../utils/Environment";
 
 export class Interpreter {
+
+    private environment: Environment = new Environment();
+
     evaluate(expr: Expression): any {
         if (expr instanceof Literal) {
             return this.evaluateLiteral(expr);
@@ -12,6 +16,10 @@ export class Interpreter {
             return this.evaluateBinary(expr);
         } else if (expr instanceof Unary) {
             return this.evaluateUnary(expr);
+        } else if (expr instanceof Variable) {
+            return this.evaluateVariable(expr);
+        } else if (expr instanceof Assign) {
+            return this.evaluateAssign(expr);
         } else {
             throw new Error("Unknown expression type");
         }
@@ -45,6 +53,23 @@ export class Interpreter {
         }
     }
 
+    private executeVaribleStatement(statement: VariableDeclaration): void {
+        const value = statement.initializer ? this.evaluate(statement.initializer): null;
+        this.environment.define(statement.name.lexeme, value);
+
+        return null;
+    }
+
+    private visitVariableExpression(expression: Variable): any {
+        return this.environment.get(expression.name);
+    }
+
+    private evaluateAssign(expr: Assign): any {
+        const value = this.evaluate(expr.value);
+        this.environment.assign(expr.name, value);
+        return value;
+    }
+
     private executePrint(statement: Print): void {
         const value = this.evaluate(statement.expression);
         console.log(this.stringify(value));
@@ -62,6 +87,10 @@ export class Interpreter {
         for (const stmt of statement.statements) {
             this.execute(stmt);
         }
+    }
+
+    private evaluateVariable(expr: Variable): any {
+        return this.environment.get(expr.name);
     }
 
     private evaluateLiteral(expr: Literal): any {

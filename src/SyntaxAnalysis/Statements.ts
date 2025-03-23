@@ -23,11 +23,13 @@ export class ExpressionStatement extends Statement {
 
 export class VariableDeclaration extends Statement {
     name: Token;
+    type: Token;
     initializer: Expression | null;
 
-    constructor(name: Token, initializer: Expression | null) {
+    constructor(name: Token, type: Token, initializer: Expression | null) {
         super();
         this.name = name;
+        this.type = type;
         this.initializer = initializer;
     }
 }

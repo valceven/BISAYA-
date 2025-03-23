@@ -1,7 +1,7 @@
 import { ParseError } from "../../utils/ParseError";
 import { TokenType } from "../../utils/TokenType";
 import { Token } from "../LexicalAnalysis/Token";
-import { Binary, Unary, Literal, Grouping, Expression} from "./Expressions";
+import { Binary, Unary, Literal, Grouping, Expression, Variable, Assign} from "./Expressions";
 import { Statement, Print, ExpressionStatement, VariableDeclaration, Block } from "./Statements";
 
 export class Parser {
@@ -16,15 +16,24 @@ export class Parser {
         const statements: Statement[] = []
         
         while (!this.isAtEnd()) {
-            statements.push(this.statement());
+            statements.push(this.declaration());
         }
 
         return statements;
     }
 
+    private declaration(): Statement {
+        try {
+            if (this.match(TokenType.MUGNA)) return this.varDeclaration();
+
+            return this.statement();
+        } catch (error) {
+            throw new Error("error bay");
+        }
+    }
+
     private statement(): Statement {
         if (this.match(TokenType.IPAKITA)) return this.printStatement();
-        if (this.match(TokenType.MUGNA)) return this.varDeclaration();
         if (this.match(TokenType.SUGOD)) return this.blockStatement();
 
         return this.expressionStatement();
@@ -32,28 +41,32 @@ export class Parser {
 
     private printStatement(): Statement {
         const value: Expression = this.expression();
-        //this.consume(TokenType.NEWLINE, "Expect ';' after expression");
+        //this.consume(TokenType.NEWLINE, "Expect '\n' after expression");
 
         return new Print(value);
     }
 
     private expressionStatement(): Statement {
         const expr: Expression = this.expression();
-        //this.consume(TokenType.NEWLINE, "Expect '; after expression");
+        //this.consume(TokenType.NEWLINE, "Expect '\n' after expression");
     
         return new ExpressionStatement(expr);
     }
 
     private varDeclaration(): Statement {
+        const type: Token = this.consumes(
+            [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINOUD],
+            "Expected type before variable name."
+        );
         const name: Token = this.consume(TokenType.Identifier, "Expected variable name.");
         
-        let initializer: Expression | null;
+        let initializer: Expression | null = null;
         if (this.match(TokenType.Assign)) {
             initializer = this.expression();
         }
 
-        //this.consume(TokenType.NEWLINE, "Expected ; after variable declaration.");
-        return new VariableDeclaration(name, initializer);
+        //this.consume(TokenType.NEWLINE, "Expected '\n' after variable declaration.");
+        return new VariableDeclaration(name, type, initializer);
     }
 
     private blockStatement(): Statement {
@@ -68,7 +81,24 @@ export class Parser {
     }
 
     private expression(): Expression {
-        return this.equality();
+        return this.assignment();
+    }
+
+    private assignment(): Expression {
+        const expr: Expression = this.equality();
+
+        if (this.match(TokenType.Assign)) {
+            const value: Expression = this.assignment();
+
+            if (expr instanceof Variable) {
+                const name: Token = (expr).name;
+                return new Assign(name, value);
+            }
+
+            throw new Error("Invalid assignment target");
+        }
+
+        return expr;
     }
 
 
@@ -106,7 +136,7 @@ export class Parser {
     }
 
     private isAtEnd(): boolean {
-        return this.peek().type === TokenType.EOF;
+        return this.peek().type === TokenType.KATAPUSAN;
     }
 
     private peek(): Token {
@@ -179,6 +209,15 @@ export class Parser {
         }
 
         throw this.error(this.peek(), "Expect Expression");
+    }
+
+    private consumes(types: TokenType[], message: string): Token {
+        for (const type of types) {
+            if(this.check(type)) {
+                return this.advance();
+            }
+        }
+        throw this.error(this.peek(), message);
     }
 
     private consume(type: TokenType, message: string): Token {

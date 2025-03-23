@@ -21,7 +21,7 @@ export class Lexer {
             this.scanToken();
         }
 
-        this.tokens.push(new Token(TokenType.EOF, "", null, this.line));
+        this.tokens.push(new Token(TokenType.KATAPUSAN, "", null, this.line));
 
         return this.tokens;
     }

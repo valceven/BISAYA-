@@ -47,3 +47,15 @@ export class Grouping extends Expression {
         this.expression = expression;
     }
 }
+
+export class Variable extends Expression {
+    constructor(public name: Token) {
+        super();
+    }
+}
+
+export class Assign extends Expression {
+    constructor(public name: Token, public value: Expression) {
+        super();
+    }
+}
