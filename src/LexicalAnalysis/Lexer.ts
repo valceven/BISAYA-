@@ -8,6 +8,8 @@ export class Lexer {
     private start: number = 0;
     private current: number = 0;
     private line: number = 1;
+    private indentStack = [] = [0];
+    private currentIndent: number = 0;
 
     constructor(sourceCode: string = "") {
         this.sourceCode = sourceCode;
@@ -86,6 +88,7 @@ export class Lexer {
             case '\n':
                 this.line++;
                 this.addToken(TokenType.NEWLINE);
+                this.handleIndentation();
                 break;
 
             case '"':
@@ -178,5 +181,26 @@ export class Lexer {
 
     private isAlphaNumeric(c: string): boolean {
         return this.isAlpha(c) || this.isDigit(c);
+    }
+
+    private handleIndentation(): void {
+        let spaces = 0;
+
+        while (this.peek() === ' ') {
+            spaces++;
+            this.advance();
+        }
+
+        if (spaces > this.currentIndent) {
+            this.indentStack.push(spaces);
+            this.currentIndent = spaces;
+            this.addToken(TokenType.INDENT);
+        } else {
+            while (spaces < this.currentIndent && this.indentStack.length > 1) {
+                this.indentStack.pop();
+                this.currentIndent = this.indentStack[this.indentStack.length - 1];
+                this.addToken(TokenType.DEDENT);
+            }
+        }
     }
 }

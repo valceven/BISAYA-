@@ -1,5 +1,6 @@
 import { Binary, Expression, Grouping, Literal, Unary } from "./Expressions";
 import { TokenType } from "../../utils/TokenType";
+import { Block, ExpressionStatement, Print, Statement, VariableDeclaration } from "./Statements";
 
 export class Interpreter {
     evaluate(expr: Expression): any {
@@ -16,16 +17,50 @@ export class Interpreter {
         }
     }
 
-    interpret(expr: Expression): void {
+    interpret(statements: Statement[]): void {
         try {
-            const value = this.evaluate(expr);
-            console.log(this.stringify(value));
+            for (const statement of statements) {
+                this.execute(statement);
+            }
         } catch (error) {
             if (error instanceof Error) {
                 this.runtimeError(error);
             } else {
                 throw error;
             }
+        }
+    }
+
+    private execute(statement: Statement): void {
+        if (statement instanceof Print) {
+            this.executePrint(statement);
+        } else if (statement instanceof ExpressionStatement) {
+            this.executeExpression(statement);
+        } else if (statement instanceof VariableDeclaration) {
+            this.executeVariableDeclaration(statement);
+        } else if (statement instanceof Block) {
+            this.executeBlock(statement);
+        } else {
+            throw new Error("Unknown statement type");
+        }
+    }
+
+    private executePrint(statement: Print): void {
+        const value = this.evaluate(statement.expression);
+        console.log(this.stringify(value));
+    }
+    
+    private executeExpression(statement: ExpressionStatement): void {
+        this.evaluate(statement.expression);
+    }
+    
+    private executeVariableDeclaration(statement: VariableDeclaration): void {
+        const value = statement.initializer ? this.evaluate(statement.initializer) : null;
+    }
+    
+    private executeBlock(statement: Block): void {
+        for (const stmt of statement.statements) {
+            this.execute(stmt);
         }
     }
 

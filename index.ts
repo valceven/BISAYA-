@@ -3,6 +3,7 @@ import { Lexer } from "./src/LexicalAnalysis/Lexer";
 import { Parser } from "./src/SyntaxAnalysis/Parser";
 import { Expression } from "./src/SyntaxAnalysis/Expressions";
 import { Interpreter } from "./src/SyntaxAnalysis/Interpreter";
+import { Statement } from "./src/SyntaxAnalysis/Statements";
 
 
 const rl = readline.createInterface({
@@ -34,12 +35,12 @@ function repl() {
             const lexer = new Lexer(input);
             const tokens = lexer.tokenize();
             const parser = new Parser(tokens);
-            const expression: Expression = parser.parse();
+            const statements: Statement[] = parser.parse();
 
             console.log("Tokens:", tokens);
-            console.log("AST:", expression);
+            console.log("AST:", statements);
 
-            const result = interpreter.interpret(expression);
+            interpreter.interpret(statements);
             
         } catch (error) {
             console.error("Error:", error.message);

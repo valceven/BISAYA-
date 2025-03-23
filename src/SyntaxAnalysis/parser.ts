@@ -2,6 +2,7 @@ import { ParseError } from "../../utils/ParseError";
 import { TokenType } from "../../utils/TokenType";
 import { Token } from "../LexicalAnalysis/Token";
 import { Binary, Unary, Literal, Grouping, Expression} from "./Expressions";
+import { Statement, Print, ExpressionStatement, VariableDeclaration, Block } from "./Statements";
 
 export class Parser {
     tokens: Token[];
@@ -11,17 +12,65 @@ export class Parser {
         this.tokens = tokens;
     }
 
-    parse(): Expression {
-        try {
-            return this.expression();
-        } catch (error: any) {
-            return null;
+    parse(): Statement[] {
+        const statements: Statement[] = []
+        
+        while (!this.isAtEnd()) {
+            statements.push(this.statement());
         }
+
+        return statements;
+    }
+
+    private statement(): Statement {
+        if (this.match(TokenType.IPAKITA)) return this.printStatement();
+        if (this.match(TokenType.MUGNA)) return this.varDeclaration();
+        if (this.match(TokenType.SUGOD)) return this.blockStatement();
+
+        return this.expressionStatement();
+    }
+
+    private printStatement(): Statement {
+        const value: Expression = this.expression();
+        //this.consume(TokenType.NEWLINE, "Expect ';' after expression");
+
+        return new Print(value);
+    }
+
+    private expressionStatement(): Statement {
+        const expr: Expression = this.expression();
+        //this.consume(TokenType.NEWLINE, "Expect '; after expression");
+    
+        return new ExpressionStatement(expr);
+    }
+
+    private varDeclaration(): Statement {
+        const name: Token = this.consume(TokenType.Identifier, "Expected variable name.");
+        
+        let initializer: Expression | null;
+        if (this.match(TokenType.Assign)) {
+            initializer = this.expression();
+        }
+
+        //this.consume(TokenType.NEWLINE, "Expected ; after variable declaration.");
+        return new VariableDeclaration(name, initializer);
+    }
+
+    private blockStatement(): Statement {
+        const statements: Statement[] = [];
+
+        while(!this.check(TokenType.NEWLINE) && !this.isAtEnd()) {
+            statements.push(this.statement());
+        }
+
+        //this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' after block");
+        return new Block(statements);
     }
 
     private expression(): Expression {
         return this.equality();
     }
+
 
     private equality(): Expression {
         let expr: Expression = this.comparison();
@@ -133,7 +182,11 @@ export class Parser {
     }
 
     private consume(type: TokenType, message: string): Token {
-        if (this.check(type)) return this.advance();
+        if (this.check(type)) {
+            const val = this.advance();
+            console.log(val);
+            return val
+        }
 
         throw this.error(this.peek(), message);
     }
