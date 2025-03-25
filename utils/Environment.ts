@@ -1,7 +1,12 @@
 import { Token } from "../src/LexicalAnalysis/Token";
 
 export class Environment {
+    enclosing: Environment;
     private values: Map<string, any> = new Map();
+
+    constructor(enclosing: Environment | null = null) {
+        this.enclosing = enclosing;
+    }
 
     define(name: string, value: any) : void {
         this.values.set(name, value);
@@ -12,6 +17,8 @@ export class Environment {
             return this.values.get(name.lexeme);
         }
 
+        if (this.enclosing !== null) return this.enclosing.get(name);
+
         throw new Error("Undefined variable");
     }
 
@@ -20,6 +27,12 @@ export class Environment {
             this.values.set(name.lexeme, value);
             return;
         }
+
+        if(this.enclosing !== null) {
+            this.enclosing.assign(name, value);
+            return;
+        }
+
         throw new Error(`Undefined variable '${name.lexeme}'.`);
     }
 }

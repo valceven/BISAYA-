@@ -29,8 +29,8 @@ function repl() {
             const parser = new Parser(tokens);
             const statements: Statement[] = parser.parse();
 
-            console.log("Tokens:", tokens);
-            console.log("AST:", statements);
+            // console.log("Tokens:", tokens);
+            // console.log("AST:", statements);
 
             interpreter.interpret(statements);
             

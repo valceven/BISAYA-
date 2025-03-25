@@ -47,18 +47,21 @@ export class Interpreter {
         } else if (statement instanceof VariableDeclaration) {
             this.executeVariableDeclaration(statement);
         } else if (statement instanceof Block) {
-            this.executeBlock(statement);
+            this.executeBlock(statement.statements, new Environment(this.environment));
         } else {
             throw new Error("Unknown statement type");
         }
     }
 
-    private executeVaribleStatement(statement: VariableDeclaration): void {
-        const value = statement.initializer ? this.evaluate(statement.initializer): null;
-        this.environment.define(statement.name.lexeme, value);
+    // private executeVariableStatement(statement: VariableDeclaration): void {
 
-        return null;
-    }
+
+
+    //     const value = statement.initializer ? this.evaluate(statement.initializer): null;
+    //     //this.environment.define(statement.name.lexeme, value);
+
+    //     return null;
+    // }
 
     private visitVariableExpression(expression: Variable): any {
         return this.environment.get(expression.name);
@@ -81,11 +84,21 @@ export class Interpreter {
     
     private executeVariableDeclaration(statement: VariableDeclaration): void {
         const value = statement.initializer ? this.evaluate(statement.initializer) : null;
+        for (let name of statement.names) {
+            this.environment.define(name.lexeme, value);
+        }
     }
     
-    private executeBlock(statement: Block): void {
-        for (const stmt of statement.statements) {
-            this.execute(stmt);
+    private executeBlock(statements: Statement[], environment: Environment): void {
+        let previous: Environment = this.environment;
+        try {
+            this.environment = environment;
+
+            for (const statement of statements) {
+                this.execute(statement);
+            }
+        } finally {
+            this.environment = previous;
         }
     }
 

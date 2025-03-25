@@ -51,11 +51,14 @@ export class Grouping extends Expression {
 export class Variable extends Expression {
     constructor(public name: Token) {
         super();
+        this.name = name;
     }
 }
 
 export class Assign extends Expression {
     constructor(public name: Token, public value: Expression) {
         super();
+        this.name = name;
+        this.value = value;
     }
 }

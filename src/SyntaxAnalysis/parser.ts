@@ -25,10 +25,10 @@ export class Parser {
     private declaration(): Statement {
         try {
             if (this.match(TokenType.MUGNA)) return this.varDeclaration();
-
             return this.statement();
         } catch (error) {
-            throw new Error("error bay");
+            console.error(`Parsing Error at token: ${this.peek().type} (${this.peek().lexeme}), position ${this.current}`);
+            throw new Error(`Parsing failed at token ${this.peek().type} with lexeme '${this.peek().lexeme}' at position ${this.current}`);
         }
     }
 
@@ -58,7 +58,12 @@ export class Parser {
             [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINOUD],
             "Expected type before variable name."
         );
-        const name: Token = this.consume(TokenType.Identifier, "Expected variable name.");
+
+        let names: Token[] = []; 
+
+        do {
+            names.push(this.consume(TokenType.Identifier, "Expect variable name."))
+        } while (this.match(TokenType.Comma));
         
         let initializer: Expression | null = null;
         if (this.match(TokenType.Assign)) {
@@ -66,17 +71,17 @@ export class Parser {
         }
 
         //this.consume(TokenType.NEWLINE, "Expected '\n' after variable declaration.");
-        return new VariableDeclaration(name, type, initializer);
+        return new VariableDeclaration(names, type, initializer);
     }
 
     private blockStatement(): Statement {
         const statements: Statement[] = [];
 
-        while(!this.check(TokenType.NEWLINE) && !this.isAtEnd()) {
+        while(!this.check(TokenType.KATAPUSAN) && !this.isAtEnd()) {
             statements.push(this.statement());
         }
 
-        //this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' after block");
+        this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' after block");
         return new Block(statements);
     }
 
@@ -201,6 +206,10 @@ export class Parser {
         if (this.match(TokenType.Number, TokenType.String)) {
             return new Literal(this.previous().literal);
         }
+
+        if (this.match(TokenType.Identifier)) {
+            return new Variable(this.previous());
+        }
     
         if (this.match(TokenType.OpenParen)) {
             let expr: Expression = this.expression();
@@ -231,7 +240,7 @@ export class Parser {
     }
 
     private error(token: Token, message: string): ParseError {
-        console.error(token, message);
+        console.error(`Error at token: ${token.type} (${token.lexeme}) at position ${this.current} - ${message}`);
         return new ParseError();
     }
 

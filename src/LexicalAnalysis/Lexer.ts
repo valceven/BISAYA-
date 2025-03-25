@@ -92,7 +92,10 @@ export class Lexer {
                 break;
 
             case '"':
-                this.string(); break;
+                this.string('"'); break;
+            case "'":
+                this.string("'"); break;
+                
     
 
             default:
@@ -133,8 +136,8 @@ export class Lexer {
         return this.sourceCode.charAt(this.current + 1);
     }
 
-    private string() {
-        while(this.peek() != '"' && !this.isAtEnd()) {
+    private string(char: string) {
+        while(this.peek() != char && !this.isAtEnd()) {
             if (this.peek() == '\n') this.line++;
             this.advance();
         }
