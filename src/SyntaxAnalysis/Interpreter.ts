@@ -74,8 +74,9 @@ export class Interpreter {
     }
 
     private executePrint(statement: Print): void {
-        const value = this.evaluate(statement.expression);
-        console.log(this.stringify(value));
+        const values = statement.values.map(expr => this.evaluate(expr));
+        const output = values.map(value => this.stringify(value)).join("");
+        console.log(output);
     }
     
     private executeExpression(statement: ExpressionStatement): void {
@@ -107,6 +108,11 @@ export class Interpreter {
     }
 
     private evaluateLiteral(expr: Literal): any {
+        if (typeof expr.value === "string") {
+            if (expr.value === "OO") return true; // Convert "OO" to true
+            if (expr.value === "WALA") return false; // Convert "WALA" to false
+        }
+    
         return expr.value;
     }
 

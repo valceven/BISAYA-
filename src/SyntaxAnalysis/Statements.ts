@@ -4,11 +4,8 @@ import { Token } from "../LexicalAnalysis/Token";
 export abstract class Statement {}
 
 export class Print extends Statement {
-    expression: Expression;
-
-    constructor(expression: Expression) {
+    constructor(public values: Expression[]) {
         super();
-        this.expression = expression;
     }
 }
 
@@ -19,6 +16,7 @@ export class ExpressionStatement extends Statement {
         super();
         this.expression = expression;
     }
+
 }
 
 export class VariableDeclaration extends Statement {

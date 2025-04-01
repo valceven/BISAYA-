@@ -8,7 +8,7 @@ export class Lexer {
     private start: number = 0;
     private current: number = 0;
     private line: number = 1;
-    private indentStack = [] = [0];
+    private indentStack: number[] = [0];
     private currentIndent: number = 0;
 
     constructor(sourceCode: string = "") {
@@ -21,38 +21,40 @@ export class Lexer {
             this.scanToken();
         }
 
-        this.tokens.push(new Token(TokenType.KATAPUSAN, "", null, this.line));
-
+        this.tokens.push(new Token(TokenType.KATAPUSAN, "KATAPUSAN", null, this.line));
         return this.tokens;
     }
 
     private isAtEnd(): boolean {
         return this.current >= this.sourceCode.length;
-        
     }
 
     private scanToken(): void {
-        let c = this.advance();
+        const c = this.advance();
     
         switch (c) {
             case '(': this.addToken(TokenType.OpenParen); break;
             case ')': this.addToken(TokenType.CloseParen); break;
             case ',': this.addToken(TokenType.Comma); break;
             case '.': this.addToken(TokenType.Dot); break;
-            case '-': this.addToken(TokenType.Minus); break;
             case '+': this.addToken(TokenType.Plus); break;
             case '*': this.addToken(TokenType.Star); break;
             case '%': this.addToken(TokenType.Modulo); break;
-
-            case '/': 
-                if (this.match('/')) {
-                    while(this.peek() != '\n' && !this.isAtEnd()) this.advance();
+            case '&': this.addToken(TokenType.And); break;
+            case '$': this.addToken(TokenType.Identifier, "$"); break;
+            case '[': this.addToken(TokenType.Identifier, "["); break;
+            case ']': this.addToken(TokenType.Identifier, "]"); break;
+            case '#': this.addToken(TokenType.Identifier, "#"); break;
+    
+            case '-':
+                if (this.match('-')) {
+                    while (this.peek() !== '\n' && !this.isAtEnd()) this.advance();
                 } else {
-                    this.addToken(TokenType.Slash);
+                    this.addToken(TokenType.Minus);
                 }
                 break;
     
-            case '<': 
+            case '<':
                 if (this.match('=')) {
                     this.addToken(TokenType.LesserEqual);
                 } else if (this.match('>')) {
@@ -62,49 +64,48 @@ export class Lexer {
                 }
                 break;
     
-            case '>': 
+            case '>':
                 if (this.match('=')) {
                     this.addToken(TokenType.GreaterEqual);
                 } else {
-                    this.addToken(TokenType.Greater);     
+                    this.addToken(TokenType.Greater);
                 }
                 break;
     
-            case '=': 
+            case '=':
                 if (this.match('=')) {
                     this.addToken(TokenType.EqualEqual);
                 } else {
                     this.addToken(TokenType.Assign);
                 }
                 break;
-
+    
             case '!': this.addToken(TokenType.Bang); break;
-
+    
             case ' ':
             case '\t':
             case '\r':
                 break;
-
+    
             case '\n':
                 this.line++;
-                this.addToken(TokenType.NEWLINE);
-                this.handleIndentation();
                 break;
-
-            case '"':
-                this.string('"'); break;
-            case "'":
-                this.string("'"); break;
-                
     
-
+            case '"':
+                this.string('"');
+                break;
+            case "'":
+                this.string("'");
+                break;
+    
             default:
                 if (this.isDigit(c)) {
                     this.number();
                 } else if (this.isAlpha(c)) {
-                    this.identifier(); 
-                }else {
-                    console.error(this.line, "Wala ko kibaw ani linyaha bai.");
+                    // console.log(`Calling identifier() for character: ${c}`); // Debug log
+                    this.identifier();
+                } else {
+                    console.error(`Line ${this.line}: Unexpected character '${c}'.`);
                 }
         }
     }
@@ -114,7 +115,7 @@ export class Lexer {
     }
 
     private addToken(type: TokenType, literal: any = null): void {
-        let text: string = this.sourceCode.substring(this.start, this.current);
+        const text: string = this.sourceCode.substring(this.start, this.current);
         this.tokens.push(new Token(type, text, literal, this.line));
     }
 
@@ -136,20 +137,29 @@ export class Lexer {
         return this.sourceCode.charAt(this.current + 1);
     }
 
-    private string(char: string) {
-        while(this.peek() != char && !this.isAtEnd()) {
-            if (this.peek() == '\n') this.line++;
+    private string(quote: string): void {
+        // console.log(`Starting string at line ${this.line}`);
+
+        while (this.peek() !== quote && !this.isAtEnd()) {
+            if (this.peek() === '\n') this.line++;
             this.advance();
         }
 
         if (this.isAtEnd()) {
-            console.error(this.line, "WAKOKIBAW ANI NA STRING BAI");
+            console.error(`Line ${this.line}: Unterminated string.`);
             return;
         }
 
-        this.advance();
+        this.advance(); // Consume the closing quote
 
-        let value: string = this.sourceCode.substring(this.start + 1, this.current - 1);
+        const value: string = this.sourceCode.substring(this.start + 1, this.current - 1);
+        
+        if(value === "OO") {
+            this.addToken(TokenType.TINOUD, true);
+        } else if(value === "WALA") {
+            this.addToken(TokenType.TINOUD, false);
+        }
+
         this.addToken(TokenType.String, value);
     }
 
@@ -161,21 +171,28 @@ export class Lexer {
         while (this.isDigit(this.peek())) this.advance();
 
         if (this.peek() === '.' && this.isDigit(this.peekNext())) {
-            this.advance();
+            this.advance(); // Consume the '.'
 
             while (this.isDigit(this.peek())) this.advance();
         }
 
-        this.addToken(TokenType.Number, parseFloat(this.sourceCode.substring(this.start, this.current)));
+        const value = parseFloat(this.sourceCode.substring(this.start, this.current));
+        this.addToken(TokenType.Number, value);
     }
 
-    private identifier() {
-        while(this.isAlphaNumeric(this.peek())) this.advance();
+    private identifier(): void {
+        while (this.isAlphaNumeric(this.peek())) this.advance();
 
         const text: string = this.sourceCode.substring(this.start, this.current);
-        const type: TokenType = KEYWORDS.get(text) || TokenType.Identifier;
-        
-        this.addToken(type);
+
+        if (text === "OO") {
+            this.addToken(TokenType.TINOUD, "OO");
+        } else if (text === "WALA") {
+            this.addToken(TokenType.TINOUD, "WALA");
+        } else {
+            const type: TokenType = KEYWORDS.get(text) || TokenType.Identifier;
+            this.addToken(type);
+        }
     }
 
     private isAlpha(c: string): boolean {
