@@ -21,7 +21,6 @@ export class Lexer {
             this.scanToken();
         }
 
-        this.tokens.push(new Token(TokenType.KATAPUSAN, "KATAPUSAN", null, this.line));
         return this.tokens;
     }
 
@@ -47,7 +46,9 @@ export class Lexer {
             case '#': this.addToken(TokenType.Identifier, "#"); break;
     
             case '-':
-                if (this.match('-')) {
+                if (this.isDigit(this.peek())) {
+                    this.number();
+                } else if (this.match('-')) {
                     while (this.peek() !== '\n' && !this.isAtEnd()) this.advance();
                 } else {
                     this.addToken(TokenType.Minus);
@@ -155,9 +156,11 @@ export class Lexer {
         const value: string = this.sourceCode.substring(this.start + 1, this.current - 1);
         
         if(value === "OO") {
-            this.addToken(TokenType.TINOUD, true);
-        } else if(value === "WALA") {
-            this.addToken(TokenType.TINOUD, false);
+            this.addToken(TokenType.BOOLEAN, true);
+            return;
+        } else if(value === "DILI") {
+            this.addToken(TokenType.BOOLEAN, false);
+            return;
         }
 
         this.addToken(TokenType.String, value);
@@ -183,24 +186,26 @@ export class Lexer {
     private identifier(): void {
         while (this.isAlphaNumeric(this.peek())) this.advance();
 
+        if (this.peek() === ':') {
+            this.advance();
+        }
+
         const text: string = this.sourceCode.substring(this.start, this.current);
 
-        if (text === "OO") {
-            this.addToken(TokenType.TINOUD, "OO");
-        } else if (text === "WALA") {
-            this.addToken(TokenType.TINOUD, "WALA");
-        } else {
-            const type: TokenType = KEYWORDS.get(text) || TokenType.Identifier;
-            this.addToken(type);
-        }
+        const type: TokenType = KEYWORDS.get(text) || TokenType.Identifier;
+        this.addToken(type);
     }
 
     private isAlpha(c: string): boolean {
         return /^[a-zA-Z_]$/.test(c);
     }
 
+    private isAlphaz(c: string): boolean {
+        return /^[a-zA-Z_:]$/.test(c);
+    }
+
     private isAlphaNumeric(c: string): boolean {
-        return this.isAlpha(c) || this.isDigit(c);
+        return this.isAlpha(c) || this.isDigit(c) || this.isAlphaz(c);
     }
 
     private handleIndentation(): void {
