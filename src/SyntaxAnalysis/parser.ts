@@ -2,7 +2,7 @@ import { ParseError } from "../../utils/ParseError";
 import { TokenType } from "../../utils/TokenType";
 import { Token } from "../LexicalAnalysis/Token";
 import { Binary, Unary, Literal, Grouping, Expression, Variable, Assign} from "./Expressions";
-import { Statement, Print, ExpressionStatement, VariableDeclaration, Block } from "./Statements";
+import { Statement, Print, ExpressionStatement, VariableDeclaration, Block, DawatStatement } from "./Statements";
 
 export class Parser {
     tokens: Token[];
@@ -15,12 +15,19 @@ export class Parser {
     parse(): Statement[] {
         const statements: Statement[] = [];
     
-        while (!this.isAtEnd()) {
+        if (!this.match(TokenType.SUGOD)) {
+            throw this.error(this.peek(), "DAPAT MAGUNA SA SUGOD");
+        }
+    
+        while (!this.check(TokenType.KATAPUSAN) && !this.isAtEnd()) {
             statements.push(this.declaration());
         }
-
+    
+        //this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' at end of block");
+    
         return statements;
     }
+    
 
     private declaration(): Statement {
         try {
@@ -30,7 +37,7 @@ export class Parser {
                     typa.type === TokenType.NUMERO ||
                     typa.type === TokenType.LETRA ||
                     typa.type === TokenType.TIPIK ||
-                    typa.type === TokenType.TINOUD
+                    typa.type === TokenType.TINUOD
                 ) {
                     return this.varDeclaration();
                 }
@@ -44,8 +51,10 @@ export class Parser {
     }
 
     private statement(): Statement {
+
         if (this.match(TokenType.IPAKITA)) return this.printStatement();
         if (this.match(TokenType.SUGOD)) return this.blockStatement();
+        if (this.match(TokenType.DAWAT)) return this.dawatStatement();
 
         return this.expressionStatement();
     }
@@ -61,6 +70,18 @@ export class Parser {
         return new Print(values);
     }
 
+    private dawatStatement(): Statement {
+        const names: Token[] = []
+        
+        do {
+            const name = this.consume(TokenType.Identifier, "Dapat naay identifier human sa dawat.");
+            names.push(name);
+        } while (this.match(TokenType.Comma));
+        
+
+        return new DawatStatement(names);
+    }
+
     private expressionStatement(): Statement {
         const expr: Expression = this.expression();
         //this.consume(TokenType.NEWLINE, "Expect '\n' after expression");
@@ -70,27 +91,25 @@ export class Parser {
 
     private varDeclaration(): Statement {
         const type: Token = this.consumes(
-            [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINOUD],
+            [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINUOD],
             "Expected type before variable name."
         );
-
+    
         let names: Token[] = []; 
+        let initializer: Expression | null = null;
 
         do {
             const name: Token = this.consume(TokenType.Identifier, "Expect variable name.");
             names.push(name);
-        } while (this.match(TokenType.Comma));
-        
-        let initializer: Expression | null = null;
-        if (this.match(TokenType.Assign)) {
-            initializer = this.expression();
 
-            if (!this.isValidInitializer(type,initializer)) {
-                throw this.error(type, `Type mismatch: Expected ${type.lexeme} but got ${initializer.constructor.name}`);
+            if (this.match(TokenType.Assign)) {
+                initializer = this.expression();
+                if (!this.isValidInitializer(type, initializer)) {
+                    throw this.error(type, `Type mismatch: Expected ${type.lexeme} but got ${initializer.constructor.name}`);
+                }
             }
-        }
-
-        //this.consume(TokenType.NEWLINE, "Expected '\n' after variable declaration.");
+        } while (this.match(TokenType.Comma));
+    
         return new VariableDeclaration(names, type, initializer);
     }
 
@@ -107,8 +126,8 @@ export class Parser {
                     return typeof value === "string";
                 case TokenType.TIPIK:
                     return typeof value === "number";
-                case TokenType.TINOUD:
-                    return value === "OO" || value === "WALA";
+                case TokenType.TINUOD:
+                    return value === true || value === false;
                 default:
                     return false;
             }
@@ -246,18 +265,23 @@ export class Parser {
         return this.primary();
     }
 
-    private primary(): Expression {
-        if (this.match(TokenType.DILI)) return new Literal(false);
-        if (this.match(TokenType.NAA)) return new Literal(true);
-        if (this.match(TokenType.WALA)) return new Literal(false);
-        if (this.match(TokenType.TINOUD)) return new Literal(this.previous().literal);
     
+
+    private primary(): Expression {    
         if (this.match(TokenType.Number, TokenType.String)) {
+            return new Literal(this.previous().literal);
+        }
+
+        if (this.match(TokenType.BOOLEAN)) {
             return new Literal(this.previous().literal);
         }
     
         if (this.match(TokenType.Identifier)) {
             return new Variable(this.previous());
+        }
+
+        if (this.match(TokenType.TINUOD)) {
+            return new Literal(this.previous().literal);
         }
     
         if (this.match(TokenType.OpenParen)) {
@@ -268,6 +292,7 @@ export class Parser {
     
         throw this.error(this.peek(), "Expect Expression");
     }
+    
     private consumes(types: TokenType[], message: string): Token {
         for (const type of types) {
             if(this.check(type)) {
@@ -280,7 +305,6 @@ export class Parser {
     private consume(type: TokenType, message: string): Token {
         if (this.check(type)) {
             const val = this.advance();
-            console.log(val);
             return val
         }
 

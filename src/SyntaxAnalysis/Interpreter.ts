@@ -1,12 +1,20 @@
 import { Assign, Binary, Expression, Grouping, Literal, Unary, Variable } from "./Expressions";
 import { TokenType } from "../../utils/TokenType";
-import { Block, ExpressionStatement, Print, Statement, VariableDeclaration } from "./Statements";
+import { Block, DawatStatement, ExpressionStatement, Print, Statement, VariableDeclaration } from "./Statements";
 import { Environment } from "../../utils/Environment";
+import * as readline from 'readline';
+
+
 
 export class Interpreter {
 
     private environment: Environment = new Environment();
+    private rl: readline.Interface;
 
+    constructor(rl: readline.Interface) {
+        this.rl = rl;
+    }
+    
     evaluate(expr: Expression): any {
         if (expr instanceof Literal) {
             return this.evaluateLiteral(expr);
@@ -25,10 +33,10 @@ export class Interpreter {
         }
     }
 
-    interpret(statements: Statement[]): void {
+    async interpret(statements: Statement[]): Promise<void> {
         try {
             for (const statement of statements) {
-                this.execute(statement);
+                await this.execute(statement);
             }
         } catch (error) {
             if (error instanceof Error) {
@@ -39,29 +47,21 @@ export class Interpreter {
         }
     }
 
-    private execute(statement: Statement): void {
+    private async execute(statement: Statement): Promise<void> {
         if (statement instanceof Print) {
             this.executePrint(statement);
+        } else if (statement instanceof DawatStatement) {
+            await this.executeDawat(statement);
         } else if (statement instanceof ExpressionStatement) {
             this.executeExpression(statement);
         } else if (statement instanceof VariableDeclaration) {
             this.executeVariableDeclaration(statement);
         } else if (statement instanceof Block) {
-            this.executeBlock(statement.statements, new Environment(this.environment));
+            await this.executeBlock(statement.statements, new Environment(this.environment));
         } else {
             throw new Error("Unknown statement type");
         }
     }
-
-    // private executeVariableStatement(statement: VariableDeclaration): void {
-
-
-
-    //     const value = statement.initializer ? this.evaluate(statement.initializer): null;
-    //     //this.environment.define(statement.name.lexeme, value);
-
-    //     return null;
-    // }
 
     private visitVariableExpression(expression: Variable): any {
         return this.environment.get(expression.name);
@@ -78,6 +78,65 @@ export class Interpreter {
         const output = values.map(value => this.stringify(value)).join("");
         console.log(output);
     }
+
+    // Modify your executeDawat method to work with the existing readline interface:
+    private executeDawat(statement: DawatStatement): Promise<void> {        
+        return new Promise((resolve, reject) => {
+            // Create a one-time listener for the 'line' event
+            const onLine = (line: string) => {
+                try {
+                    // Remove this listener so it doesn't interfere with future input
+                    this.rl.removeListener('line', onLine);
+                    
+                    const inputString = line.trim();                    
+                    const inputValues = inputString.split(/\s+/);
+                    
+                    if (inputValues.length < statement.names.length) {
+                        throw new Error(`Not enough input values. Expected ${statement.names.length}, got ${inputValues.length}.`);
+                    }
+                    
+                    for (let i = 0; i < statement.names.length; i++) {
+                        const nameToken = statement.names[i];
+                        
+                        if (this.environment.contains(nameToken.lexeme)) {
+                            const value = this.parseValue(inputValues[i]);
+                            this.environment.assign(nameToken, value);
+                        } else {
+                            throw new Error(`Variable '${nameToken.lexeme}' is not defined.`);
+                        }
+                    }
+                    resolve();
+                } catch (error) {
+                    console.error(error.message);
+                    reject(error);
+                }
+            };
+            
+            // Listen for the next line of input
+            this.rl.once('line', onLine);
+        });
+    }
+    
+    // Make sure this helper method is correctly implemented
+    private parseValue(token: string): any {
+        // Try to parse as number first
+        const numValue = Number(token);
+        if (!isNaN(numValue)) {
+            return numValue;
+        }
+        
+        // Handle boolean values
+        if (token === "OO") return true;
+        if (token === "DILI") return false;
+        
+        // Return as string by default
+        return token;
+    }
+
+    private scan(input: string): string[] {
+        const tokens = input.split(/\s+/);
+        return tokens;
+    }
     
     private executeExpression(statement: ExpressionStatement): void {
         this.evaluate(statement.expression);
@@ -90,13 +149,13 @@ export class Interpreter {
         }
     }
     
-    private executeBlock(statements: Statement[], environment: Environment): void {
+    private async executeBlock(statements: Statement[], environment: Environment): Promise<void> {
         let previous: Environment = this.environment;
         try {
             this.environment = environment;
-
+    
             for (const statement of statements) {
-                this.execute(statement);
+                await this.execute(statement);
             }
         } finally {
             this.environment = previous;
@@ -110,7 +169,7 @@ export class Interpreter {
     private evaluateLiteral(expr: Literal): any {
         if (typeof expr.value === "string") {
             if (expr.value === "OO") return true; // Convert "OO" to true
-            if (expr.value === "WALA") return false; // Convert "WALA" to false
+            if (expr.value === "DILI") return false; // Convert "DILI" to false
         }
     
         return expr.value;
@@ -199,7 +258,7 @@ export class Interpreter {
     }
 
     private stringify(value: any): string {
-        return value === null ? "nil" : String(value);
+        return typeof value === 'boolean' ? value === true ? "OO" : "DILI" : value === null ? "nil" : String(value);    
     }
 
     private runtimeError(error: Error): void {

@@ -3,12 +3,11 @@ import { TokenType } from "./TokenType";
 export const KEYWORDS = new Map<string, TokenType>([
     ["UG", TokenType.UG],
     ["O", TokenType.O],
-    ["DILI", TokenType.DILI],
     ["MUGNA", TokenType.MUGNA],
     ["SUGOD", TokenType.SUGOD],
     ["KATAPUSAN", TokenType.KATAPUSAN],
-    ["IPAKITA", TokenType.IPAKITA],
-    ["DAWAT", TokenType.DAWAT],
+    ["IPAKITA:", TokenType.IPAKITA],
+    ["DAWAT:", TokenType.DAWAT],
     ["KUNG", TokenType.KUNG],
     ["PUNDOK", TokenType.PUNDOK],
     ["KUNGWALA", TokenType.KUNGWALA],
@@ -18,5 +17,5 @@ export const KEYWORDS = new Map<string, TokenType>([
     ["NUMERO", TokenType.NUMERO],
     ["TIPIK", TokenType.TIPIK],
     ["LETRA", TokenType.LETRA],
-    ["TINOUD", TokenType.TINOUD]
+    ["TINUOD", TokenType.TINUOD]
 ]);

@@ -9,6 +9,16 @@ export class Print extends Statement {
     }
 }
 
+export class DawatStatement extends Statement {
+    names: Token[];
+
+    constructor(names: Token[]) {
+        super();
+        this.names = names;
+    }
+
+}
+
 export class ExpressionStatement extends Statement {
     expression: Expression;
 

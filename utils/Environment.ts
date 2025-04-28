@@ -21,6 +21,18 @@ export class Environment {
 
         throw new Error("Undefined variable");
     }
+    
+    public contains(name: string): boolean {
+        if (this.values.has(name)) {
+            return true;
+        }
+        
+        if (this.enclosing !== null) {
+            return this.enclosing.contains(name);
+        }
+        
+        return false;
+    }
 
     assign(name: Token, value: any): void {
         if (this.values.has(name.lexeme)) {
