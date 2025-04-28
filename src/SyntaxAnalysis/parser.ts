@@ -23,7 +23,7 @@ export class Parser {
             statements.push(this.declaration());
         }
     
-        this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' at end of block");
+        //this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' at end of block");
     
         return statements;
     }
@@ -96,19 +96,19 @@ export class Parser {
         );
     
         let names: Token[] = []; 
-    
+        let initializer: Expression | null = null;
+
         do {
             const name: Token = this.consume(TokenType.Identifier, "Expect variable name.");
             names.push(name);
-        } while (this.match(TokenType.Comma));
-    
-        let initializer: Expression | null = null;
-        if (this.match(TokenType.Assign)) {
-            initializer = this.expression();
-            if (!this.isValidInitializer(type, initializer)) {
-                throw this.error(type, `Type mismatch: Expected ${type.lexeme} but got ${initializer.constructor.name}`);
+
+            if (this.match(TokenType.Assign)) {
+                initializer = this.expression();
+                if (!this.isValidInitializer(type, initializer)) {
+                    throw this.error(type, `Type mismatch: Expected ${type.lexeme} but got ${initializer.constructor.name}`);
+                }
             }
-        }
+        } while (this.match(TokenType.Comma));
     
         return new VariableDeclaration(names, type, initializer);
     }
@@ -265,8 +265,14 @@ export class Parser {
         return this.primary();
     }
 
+    
+
     private primary(): Expression {    
         if (this.match(TokenType.Number, TokenType.String)) {
+            return new Literal(this.previous().literal);
+        }
+
+        if (this.match(TokenType.BOOLEAN)) {
             return new Literal(this.previous().literal);
         }
     
@@ -286,6 +292,7 @@ export class Parser {
     
         throw this.error(this.peek(), "Expect Expression");
     }
+    
     private consumes(types: TokenType[], message: string): Token {
         for (const type of types) {
             if(this.check(type)) {

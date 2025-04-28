@@ -1,5 +1,5 @@
 SUGOD
 	MUGNA LETRA m = 'a'
 	MUGNA LETRA n = 'b'
-	IPAKITA: m & n
+	IPAKITA: m & n $ 'helloworld'
 KATAPUSAN

@@ -1,7 +1,7 @@
 import * as readline from "readline";
 import * as fs from "fs"; // ✅ Add filesystem module
 import { Lexer } from "./src/LexicalAnalysis/Lexer";
-import { Parser } from "./src/SyntaxAnalysis/Parser";
+import { Parser } from "./src/SyntaxAnalysis/parser";
 import { Expression } from "./src/SyntaxAnalysis/Expressions";
 import { Interpreter } from "./src/SyntaxAnalysis/Interpreter";
 import { Statement } from "./src/SyntaxAnalysis/Statements";
@@ -18,7 +18,7 @@ async function runInput(input: string) {
     try {
         const lexer = new Lexer(input);
         const tokens = lexer.tokenize();
-        console.log(tokens);
+        //console.log(tokens);
         const parser = new Parser(tokens);
         const statements: Statement[] = parser.parse();
 

@@ -258,7 +258,7 @@ export class Interpreter {
     }
 
     private stringify(value: any): string {
-        return value === null ? "nil" : String(value);
+        return typeof value === 'boolean' ? value === true ? "OO" : "DILI" : value === null ? "nil" : String(value);    
     }
 
     private runtimeError(error: Error): void {
