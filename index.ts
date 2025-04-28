@@ -1,6 +1,6 @@
 import * as readline from "readline";
 import { Lexer } from "./src/LexicalAnalysis/Lexer";
-import { Parser } from "./src/SyntaxAnalysis/Parser";
+import { Parser } from "./src/SyntaxAnalysis/parser";
 import { Expression } from "./src/SyntaxAnalysis/Expressions";
 import { Interpreter } from "./src/SyntaxAnalysis/Interpreter";
 import { Statement } from "./src/SyntaxAnalysis/Statements";
