@@ -1,47 +1,27 @@
-/* 
-
-    lexer def - bsta lexer
-
-    <var-declaration> ::= "MUGNA" <type-name> <identifier-list>
-
-    <type-name> ::= "NUMERO" | "LETRA" | "TINOUD" | "TIPIK"
-
-    <identifier-list> ::= <identifier> | <identifier> "," <identifier-list>
-
-    <identifier> ::= <variable-name> | <variable-name> "=" <expr>
-
-    <variable-name> ::= <letter> { <letter> | <digit> | "_" }
-
-    <expr> ::= <term> | <term> <operator> <expr>
-
-    <term> ::= <number> | <variable-name> | "(" <expr> ")"
-
-    <operator> ::= "+" | "-" | "*" | "/"
-
-    <number> ::= <digit> { <digit> }
-
-    <letter> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
-
-    <digit> ::= "0" | "1" | ... | "9"
-*/
-
 export enum TokenType {
+    // Single-character tokens
+    OpenParen, CloseParen, Comma, Dot, Plus, Minus, Star, Slash, Modulo,
+    
+    // One or two character tokens
+    Bang, BangEqual, Assign, EqualEqual, Greater, GreaterEqual,
+    Lesser, LesserEqual, NotEqual,
+    
+    // Literals
+    Identifier, String, Number, BOOLEAN,
+    
+    // Keywords
+    UG, O, MUGNA, SUGOD, KATAPUSAN, IPAKITA, DAWAT,
+    KUNG, PUNDOK, KUNGWALA, KUNGDILI, ALANGSA, WALA,
+    NUMERO, TIPIK, LETRA, TINUOD,
+    
+    // Special tokens
+    EOF, INDENT, DEDENT,
 
-    //Single Character Tokens.
-    OpenParen, CloseParen, Comma, Bang,
-    Dot, Minus, Plus, Slash, Star, Modulo, //9
-
-    // One or two Character Tokens
-    Lesser, Greater, LesserEqual, Assign,
-    GreaterEqual, EqualEqual, NotEqual, //16
-
-    // Literals.
-    Identifier, String, Number, //19
-
-    // Keywords.
-    UG, O, DILI, MUGNA, SUGOD, KATAPUSAN, OO, BOOLEAN,
-    IPAKITA, DAWAT, NUMERO, TIPIK, LETRA, TINUOD,
-    KUNG, PUNDOK, KUNGWALA, KUNGDILI,
-    ALANGSA, WALA, NAA, NEWLINE, INDENT, DEDENT, And
-
-};
+    // New token types
+    And,   // For the '&' operator
+    DOLLAR,    // For the '$' token
+    LeftBracket, // For the '[' token
+    RightBracket, // For the ']' token
+    Hash,      // For the '#' token
+    ESCAPECODE,
+}

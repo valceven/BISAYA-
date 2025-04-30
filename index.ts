@@ -18,11 +18,10 @@ async function runInput(input: string) {
     try {
         const lexer = new Lexer(input);
         const tokens = lexer.tokenize();
-        //console.log(tokens);
+        console.log(tokens);
         const parser = new Parser(tokens);
         const statements: Statement[] = parser.parse();
 
-        //console.log("Tokens:", tokens);
         // console.log("AST:", statements);
 
         await interpreter.interpret(statements);

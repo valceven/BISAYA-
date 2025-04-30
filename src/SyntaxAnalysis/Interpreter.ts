@@ -3,6 +3,7 @@ import { TokenType } from "../../utils/TokenType";
 import { Block, DawatStatement, ExpressionStatement, Print, Statement, VariableDeclaration } from "./Statements";
 import { Environment } from "../../utils/Environment";
 import * as readline from 'readline';
+import { Token } from "../LexicalAnalysis/Token";
 
 
 
@@ -76,7 +77,8 @@ export class Interpreter {
     private executePrint(statement: Print): void {
         const values = statement.values.map(expr => this.evaluate(expr));
         const output = values.map(value => this.stringify(value)).join("");
-        console.log(output);
+    
+        console.log(output.replace(/\n/g, '\n'));
     }
 
     // Modify your executeDawat method to work with the existing readline interface:
@@ -144,10 +146,36 @@ export class Interpreter {
     
     private executeVariableDeclaration(statement: VariableDeclaration): void {
         const value = statement.initializer ? this.evaluate(statement.initializer) : null;
+    
         for (let name of statement.names) {
-            this.environment.define(name.lexeme, value);
+            let finalValue = value;
+    
+            switch (statement.type.lexeme) {
+                case "TINUOD":
+                    if (typeof value !== "boolean") {
+                        throw new Error(`Type mismatch: Expected TINUOD but got ${typeof value}`);
+                    }
+                    finalValue = value ? "OO" : "DILI";
+                    break;
+    
+                case "NUMERO":
+                    if (typeof value !== "number") {
+                        throw new Error(`Type mismatch: Expected NUMERO but got ${typeof value}`);
+                    }
+                    break;
+    
+                case "LETRA":
+                    if (typeof value !== "string") {
+                        throw new Error(`Type mismatch: Expected LETRA but got ${typeof value}`);
+                    }
+                    break;
+            }
+    
+            this.environment.define(name.lexeme, finalValue);
         }
     }
+    
+
     
     private async executeBlock(statements: Statement[], environment: Environment): Promise<void> {
         let previous: Environment = this.environment;
@@ -168,10 +196,9 @@ export class Interpreter {
 
     private evaluateLiteral(expr: Literal): any {
         if (typeof expr.value === "string") {
-            if (expr.value === "OO") return true; // Convert "OO" to true
-            if (expr.value === "DILI") return false; // Convert "DILI" to false
+            if (expr.value === "OO") return true;  // Convert "OO" to true
+            if (expr.value === "DILI") return false;  // Convert "DILI" to false
         }
-    
         return expr.value;
     }
 
@@ -199,13 +226,18 @@ export class Interpreter {
                 if (right === 0) throw new Error("Division by zero");
                 this.checkNumberOperands(expr.operator.type, left, right);
                 return left / right;
+
             case TokenType.Greater:
             case TokenType.Lesser:
             case TokenType.GreaterEqual:
             case TokenType.LesserEqual:
-                return this.compareValues(expr.operator.type, left, right);
-            case TokenType.NotEqual: return !this.isEqual(left, right);
-            case TokenType.EqualEqual: return this.isEqual(left, right);
+                const comparisonResult = this.compareValues(expr.operator.type, left, right);
+                return comparisonResult ? "OO" : "DILI";
+
+            case TokenType.NotEqual: return !this.isEqual(left, right) ? "OO" : "DILI";
+            case TokenType.EqualEqual: return this.isEqual(left, right) ? "OO" : "DILI";
+
+            case TokenType.And: return this.stringify(left) + this.stringify(right);
             default: throw new Error(`Unknown operator: ${expr.operator.type}`);
         }
     }
@@ -219,11 +251,6 @@ export class Interpreter {
                 return -right;
             default: throw new Error(`Unknown operator: ${expr.operator.type}`);
         }
-    }
-
-    private isTruthy(value: any): boolean {
-        if (value === null) return false;
-        return Boolean(value);
     }
 
     private compareValues(operator: TokenType, left: any, right: any): boolean {

@@ -62,3 +62,12 @@ export class Assign extends Expression {
         this.value = value;
     }
 }
+
+export class SpecialValue extends Expression {
+    value: string;
+
+    constructor(value: string) {
+        super();
+        this.value = value;
+    }
+}
