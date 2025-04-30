@@ -5,8 +5,9 @@ SUGOD
 	x=y=4
 	a_1='c'
 	--this is a cooment
-	IPAKITA: a_1
-	IPAKITA: x & t & z & $ a_1 $ [#] & "last"
+	IPAKITA: x & t & z & $ & a_1 & [#] & "last"
 	--IPAKITA: [x]
 KATAPUSAN
  
+ -- 4005
+ -- c#last

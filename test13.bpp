@@ -1,5 +1,5 @@
 SUGOD
-	MUGNA TINUOD a = 5 < 3 , b = "DILI"
-	DAWAT: b
-	IPAKITA: a
+	MUGNA TINUOD a = (5 <> 5) , b = "DILI"
+	--DAWAT: b
+	IPAKITA: a & b
 KATAPUSAN

@@ -77,11 +77,10 @@ export class Interpreter {
     private executePrint(statement: Print): void {
         const values = statement.values.map(expr => this.evaluate(expr));
         const output = values.map(value => this.stringify(value)).join("");
-    
-        console.log(output.replace(/\n/g, '\n'));
+        console.log(values);
+        console.log(output);
     }
 
-    // Modify your executeDawat method to work with the existing readline interface:
     private executeDawat(statement: DawatStatement): Promise<void> {        
         return new Promise((resolve, reject) => {
             // Create a one-time listener for the 'line' event
@@ -145,35 +144,36 @@ export class Interpreter {
     }
     
     private executeVariableDeclaration(statement: VariableDeclaration): void {
-        const value = statement.initializer ? this.evaluate(statement.initializer) : null;
-    
-        for (let name of statement.names) {
-            let finalValue = value;
+        for (const { name, initializer } of statement.declarations) {
+            let value = initializer ? this.evaluate(initializer) : null;
     
             switch (statement.type.lexeme) {
                 case "TINUOD":
-                    if (typeof value !== "boolean") {
+                    console.log("TINUOD", value);
+                    if ((typeof value !== "boolean" && value !== "OO" && value !== "DILI") && value !== null) {
                         throw new Error(`Type mismatch: Expected TINUOD but got ${typeof value}`);
                     }
-                    finalValue = value ? "OO" : "DILI";
+                    value = value ? "OO" : "DILI";
+                    console.log("TINUOD", value);
                     break;
     
                 case "NUMERO":
-                    if (typeof value !== "number") {
+                    if (typeof value !== "number" && value !== null) {
                         throw new Error(`Type mismatch: Expected NUMERO but got ${typeof value}`);
                     }
                     break;
     
                 case "LETRA":
-                    if (typeof value !== "string") {
+                    if (typeof value !== "string" && value !== null) {
                         throw new Error(`Type mismatch: Expected LETRA but got ${typeof value}`);
                     }
                     break;
             }
     
-            this.environment.define(name.lexeme, finalValue);
+            this.environment.define(name.lexeme, value);
         }
     }
+    
     
 
     

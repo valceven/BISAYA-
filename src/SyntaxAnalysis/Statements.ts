@@ -12,7 +12,7 @@ export class Print extends Statement {
 export class DawatStatement extends Statement {
     names: Token[];
 
-    constructor(names: Token[]) {
+    constructor(names: Token[], ) {
         super();
         this.names = names;
     }
@@ -30,15 +30,13 @@ export class ExpressionStatement extends Statement {
 }
 
 export class VariableDeclaration extends Statement {
-    names: Token[];
     type: Token;
-    initializer: Expression | null;
+    declarations: { name: Token; initializer: Expression | null }[];
 
-    constructor(names: Token[], type: Token, initializer: Expression | null) {
+    constructor(type: Token, declarations: { name: Token; initializer: Expression | null }[]) {
         super();
-        this.names = names;
         this.type = type;
-        this.initializer = initializer;
+        this.declarations = declarations;
     }
 }
 

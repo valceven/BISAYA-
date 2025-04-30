@@ -63,9 +63,7 @@ export class Parser {
         const values: Expression[] = [];
         
         do {
-            if (this.match(TokenType.DOLLAR)) {
-                values.push(new Literal("\n")); // Handle dollar sign as newline
-            } else if (this.match(TokenType.LeftBracket)) {
+            if (this.match(TokenType.LeftBracket)) {
                 if (this.match(TokenType.Hash)) {
                     this.consume(TokenType.RightBracket, "Expect ']' to close special value.");
                     values.push(new SpecialValue('#')); // Add special value directly
@@ -99,70 +97,83 @@ export class Parser {
     }
 
     private varDeclaration(): Statement {
-    const type: Token = this.consumes(
-        [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINUOD],
-        "Expected type before variable name."
-    );
-
-    let names: Token[] = [];
-    let initializer: Expression | null = null;
-
-    do {
-        const name: Token = this.consume(TokenType.Identifier, "Expect variable name.");
-        names.push(name);
-
-        // If the type is TINUOD (boolean), we check for initialization and apply boolean logic
-        if (type.type === TokenType.TINUOD) {
+        const type: Token = this.consumes(
+            [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINUOD],
+            "Expected type before variable name."
+        );
+    
+        const declarations: { name: Token; initializer: Expression | null }[] = [];
+    
+        do {
+            const name: Token = this.consume(TokenType.Identifier, "Expect variable name.");
+            let initializer: Expression | null = null;
+    
             if (this.match(TokenType.Assign)) {
                 initializer = this.expression();
 
-                // Apply the boolean initialization logic
-                if (initializer instanceof Literal) {
-                    const value = initializer.value;
-                    if (typeof value === 'boolean') {
-                        initializer = new Literal(value ? "OO" : "DILI");
-                    }
+                if (initializer instanceof Grouping) {
+                    initializer = initializer.expression;
+                }
+                
+                if (initializer instanceof Binary) {
+                    const result = this.evaluate(initializer);
+                    initializer = new Literal(result);
+                }
+
+                if (initializer && !this.isValidInitializer(type, initializer)) {
+                    throw this.error(type, `Type mismatch: Expected ${type.lexeme} but got ${initializer.constructor.name}`);
+                }
+
+                if (initializer instanceof Literal && typeof initializer.value === 'boolean') {
+                    initializer = new Literal(initializer.value);
                 }
             }
-        } else if (this.match(TokenType.Assign)) {
-            // Handle assignment for non-boolean types
-            initializer = this.expression();
-
-            if (!this.isValidInitializer(type, initializer)) {
-                throw this.error(type, `Type mismatch: Expected ${type.lexeme} but got ${initializer.constructor.name}`);
-            }
-        }
-
-    } while (this.match(TokenType.Comma)); // Continue if there's a comma, indicating another variable
-
-    return new VariableDeclaration(names, type, initializer);
-}
+    
+            declarations.push({ name, initializer });
+    
+        } while (this.match(TokenType.Comma));
+    
+        return new VariableDeclaration(type, declarations);
+    }
+    
 
     
-    private evaluate(expression: Expression): boolean {
-        if (expression instanceof Literal && typeof expression.value === 'boolean') {
-            return expression.value; // Return the actual boolean value
-        }
-    
+    private evaluate(expression: Expression): boolean | string | number {
         if (expression instanceof Binary) {
             const leftValue = this.evaluate(expression.left);
             const rightValue = this.evaluate(expression.right);
-            if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+    
+            if (typeof leftValue === 'boolean' && typeof rightValue === 'boolean') {
                 switch (expression.operator.lexeme) {
-                    case "<":
-                        return leftValue < rightValue;
-                    case ">":
-                        return leftValue > rightValue;
                     case "==":
                         return leftValue === rightValue;
-                    case "!=":
+                    case "<>":
+                        return leftValue !== rightValue;
+                }
+            }
+    
+            if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+                switch (expression.operator.lexeme) {
+                    case '<':
+                        return leftValue < rightValue;
+                    case '>':
+                        return leftValue > rightValue;
+                    case '==':
+                        return leftValue === rightValue;
+                    case '<>':
                         return leftValue !== rightValue;
                 }
             }
         }
     
+        if (expression instanceof Literal) {
+            return expression.value;
+        }
+    
         return false;
     }
+    
+    
     
     private isValidInitializer(type: Token, initializer: Expression): boolean {
         if (initializer instanceof Literal) {
