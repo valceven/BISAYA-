@@ -13,7 +13,7 @@ export const KEYWORDS = new Map<string, TokenType>([
     ["KUNGWALA", TokenType.KUNGWALA],
     ["KUNGDILI", TokenType.KUNGDILI],
     ["ALANGSA", TokenType.ALANGSA],
-    ["WALA", TokenType.WALA],
+    [" ", TokenType.Whitespace],
     ["NUMERO", TokenType.NUMERO],
     ["TIPIK", TokenType.TIPIK],
     ["LETRA", TokenType.LETRA],

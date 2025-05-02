@@ -48,3 +48,46 @@ export class Block extends Statement {
         this.statements = statements;
     }
 }
+
+export class IfStatement extends Statement {
+    condition: Expression;
+    thenBranch: Statement;
+    elseBranch: Statement | null;
+
+    constructor(condition: Expression, thenBranch: Statement, elseBranch: Statement | null) {
+        super();
+        this.condition = condition;
+        this.thenBranch = thenBranch;
+        this.elseBranch = elseBranch;
+    }
+}
+
+export class IfElseIfElseStatement extends Statement {
+    condition: Expression;
+    thenBranch: Statement;
+    elseIfBranches: { condition: Expression, block: Statement }[];
+    elseBranch: Statement | null;
+
+    constructor(
+        condition: Expression,
+        thenBranch: Statement,
+        elseIfBranches: { condition: Expression, block: Statement }[],
+        elseBranch: Statement | null
+    ) {
+        super();
+        this.condition = condition;
+        this.thenBranch = thenBranch;
+        this.elseIfBranches = elseIfBranches;
+        this.elseBranch = elseBranch;
+    }
+}
+
+export class WhileStatement implements Statement {
+    condition: Expression;
+    body: Statement;
+
+    constructor(condition: Expression, body: Statement) {
+        this.condition = condition;
+        this.body = body;
+    }
+}

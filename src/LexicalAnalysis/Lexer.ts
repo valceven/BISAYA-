@@ -34,9 +34,16 @@ export class Lexer {
         switch (c) {
             case '(': this.addToken(TokenType.OpenParen); break;
             case ')': this.addToken(TokenType.CloseParen); break;
+            case '{': this.addToken(TokenType.LeftBracket); break;
+            case '}': this.addToken(TokenType.RightBracket); break;
             case ',': this.addToken(TokenType.Comma); break;
             case '.': this.addToken(TokenType.Dot); break;
-            case '+': this.addToken(TokenType.Plus); break;
+            case '+': 
+                if(this.match('+')) {
+                    this.addToken(TokenType.PlusPlus); break;
+                } else {
+                    this.addToken(TokenType.Plus); break;
+                }
             case '*': this.addToken(TokenType.Star); break;
             case '%': this.addToken(TokenType.Modulo); break;
             case '&': this.addToken(TokenType.And); break;

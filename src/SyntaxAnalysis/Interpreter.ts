@@ -1,6 +1,6 @@
-import { Assign, Binary, Expression, Grouping, Literal, Unary, Variable } from "./Expressions";
+import { Assign, Binary, Expression, Grouping, Literal, Unary, Postfix,Variable } from "./Expressions";
 import { TokenType } from "../../utils/TokenType";
-import { Block, DawatStatement, ExpressionStatement, Print, Statement, VariableDeclaration } from "./Statements";
+import { Block, DawatStatement, ExpressionStatement, IfElseIfElseStatement, IfStatement, Print, Statement, VariableDeclaration, WhileStatement } from "./Statements";
 import { Environment } from "../../utils/Environment";
 import * as readline from 'readline';
 import { Token } from "../LexicalAnalysis/Token";
@@ -11,12 +11,13 @@ export class Interpreter {
 
     private environment: Environment = new Environment();
     private rl: readline.Interface;
+    private outputBuffer: string = "";
 
     constructor(rl: readline.Interface) {
         this.rl = rl;
     }
     
-    evaluate(expr: Expression): any {
+    evaluate (expr: Expression): any {
         if (expr instanceof Literal) {
             return this.evaluateLiteral(expr);
         } else if (expr instanceof Grouping) {
@@ -29,6 +30,8 @@ export class Interpreter {
             return this.evaluateVariable(expr);
         } else if (expr instanceof Assign) {
             return this.evaluateAssign(expr);
+        } else if (expr instanceof Postfix) {
+                this.visitPostfix(expr);
         } else {
             throw new Error("Unknown expression type");
         }
@@ -56,10 +59,17 @@ export class Interpreter {
         } else if (statement instanceof ExpressionStatement) {
             this.executeExpression(statement);
         } else if (statement instanceof VariableDeclaration) {
-            this.executeVariableDeclaration(statement);
+            await this.executeVariableDeclaration(statement);
         } else if (statement instanceof Block) {
             await this.executeBlock(statement.statements, new Environment(this.environment));
+        } else if (statement instanceof IfElseIfElseStatement) {
+            this.executeIf(statement);
+        } else if (statement instanceof Binary) {
+            await this.evaluateBinary(statement);
+        } else if (statement instanceof WhileStatement){
+            await this.evaluateWhile(statement);
         } else {
+            console.error("Unknown statement type:", statement.constructor.name);
             throw new Error("Unknown statement type");
         }
     }
@@ -67,6 +77,14 @@ export class Interpreter {
     private visitVariableExpression(expression: Variable): any {
         return this.environment.get(expression.name);
     }
+
+    private async evaluateWhile(statement: WhileStatement): Promise<void> {
+        while (this.isTruthy(await this.evaluate(statement.condition))) {
+            await this.execute(statement.body);
+        }
+        return null;
+    }
+
 
     private evaluateAssign(expr: Assign): any {
         const value = this.evaluate(expr.value);
@@ -77,9 +95,11 @@ export class Interpreter {
     private executePrint(statement: Print): void {
         const values = statement.values.map(expr => this.evaluate(expr));
         const output = values.map(value => this.stringify(value)).join("");
-        console.log(values);
-        console.log(output);
+        this.outputBuffer += output + "\n";  // Add to buffer with newline
+        console.log(output);  // Print to terminal immediately
     }
+
+
 
     private executeDawat(statement: DawatStatement): Promise<void> {        
         return new Promise((resolve, reject) => {
@@ -149,12 +169,10 @@ export class Interpreter {
     
             switch (statement.type.lexeme) {
                 case "TINUOD":
-                    console.log("TINUOD", value);
                     if ((typeof value !== "boolean" && value !== "OO" && value !== "DILI") && value !== null) {
                         throw new Error(`Type mismatch: Expected TINUOD but got ${typeof value}`);
                     }
                     value = value ? "OO" : "DILI";
-                    console.log("TINUOD", value);
                     break;
     
                 case "NUMERO":
@@ -173,9 +191,27 @@ export class Interpreter {
             this.environment.define(name.lexeme, value);
         }
     }
-    
-    
 
+    
+    private async executeIf(statement: IfElseIfElseStatement): Promise<void> {
+        const condition = await this.evaluate(statement.condition);
+        if (condition != "DILI") {
+            await this.execute(statement.thenBranch);
+            return;
+        }
+    
+        for (const branch of statement.elseIfBranches) {
+            const elseifCondition = await this.evaluate(branch.condition);
+            if (elseifCondition != "DILI") {
+                await this.execute(branch.block);
+                return;
+            }
+        }
+    
+        if (statement.elseBranch !== null) {
+            await this.execute(statement.elseBranch);
+        }
+    }
     
     private async executeBlock(statements: Statement[], environment: Environment): Promise<void> {
         let previous: Environment = this.environment;
@@ -237,10 +273,22 @@ export class Interpreter {
             case TokenType.NotEqual: return !this.isEqual(left, right) ? "OO" : "DILI";
             case TokenType.EqualEqual: return this.isEqual(left, right) ? "OO" : "DILI";
 
-            case TokenType.And: return this.stringify(left) + this.stringify(right);
+            case TokenType.UG:
+                return (this.isTruthy(left) && this.isTruthy(right)) ? "OO" : "DILI";
+
+            case TokenType.O:
+                return (this.isTruthy(left) || this.isTruthy(right)) ? "OO" : "DILI";
             default: throw new Error(`Unknown operator: ${expr.operator.type}`);
         }
     }
+
+    private isTruthy(value: any): boolean {
+        if (value === null) return false;
+        if (typeof value === "boolean") return value;
+        if (typeof value === "string") return value === "OO";
+        return Boolean(value);
+    }
+    
 
     private evaluateUnary(expr: Unary): any {
         const right = this.evaluate(expr.right);
@@ -252,6 +300,28 @@ export class Interpreter {
             default: throw new Error(`Unknown operator: ${expr.operator.type}`);
         }
     }
+
+    visitPostfix(expr: Postfix): any {
+        const operand = expr.operand;
+    
+        if (!(operand instanceof Variable)) {
+            throw new Error("Invalid postfix target. Must be a variable.");
+        }
+
+        const variableOperand = operand as Variable;
+        const value = this.evaluate(variableOperand);
+    
+        if (typeof value !== "number") {
+            throw new Error("Can only increment/decrement numbers.");
+        }
+    
+        const newValue = expr.operator.lexeme === '++' ? value + 1 : value - 1;
+    
+        this.environment.assign(operand.name, newValue);
+    
+        return value;
+    }
+    
 
     private compareValues(operator: TokenType, left: any, right: any): boolean {
         const leftNum = Number(left);
@@ -285,8 +355,17 @@ export class Interpreter {
     }
 
     private stringify(value: any): string {
-        return typeof value === 'boolean' ? value === true ? "OO" : "DILI" : value === null ? "nil" : String(value);    
+        if (typeof value === 'boolean') {
+            return value ? "OO" : "DILI";
+        } else if (value === null) {
+            return "nil";
+        } else if (value === ' ') {
+            return ""; 
+        } else {
+            return String(value);
+        }
     }
+    
 
     private runtimeError(error: Error): void {
         console.error(`[Runtime Error] ${error.message}`);

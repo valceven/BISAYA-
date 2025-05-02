@@ -1,5 +1,6 @@
 SUGOD
-	MUGNA LETRA m = 'a'
-	MUGNA LETRA n = 'b'
-	IPAKITA: m & n & $ & 'helloworld'
+	MUGNA NUMERO a = 100, b = 200, c = 300
+	MUGNA TINUOD d="DILI"
+	d = (a < b UG c <> 200)
+	IPAKITA: d
 KATAPUSAN

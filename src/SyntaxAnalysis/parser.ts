@@ -1,8 +1,8 @@
 import { ParseError } from "../../utils/ParseError";
 import { TokenType } from "../../utils/TokenType";
 import { Token } from "../LexicalAnalysis/Token";
-import { Binary, Unary, Literal, Grouping, Expression, Variable, Assign, SpecialValue} from "./Expressions";
-import { Statement, Print, ExpressionStatement, VariableDeclaration, Block, DawatStatement } from "./Statements";
+import { Binary, Unary, Literal, Grouping, Expression, Variable, Assign, SpecialValue, Postfix} from "./Expressions";
+import { Statement, Print, ExpressionStatement, VariableDeclaration, Block, WhileStatement, DawatStatement, IfElseIfElseStatement, IfStatement } from "./Statements";
 
 export class Parser {
     tokens: Token[];
@@ -39,7 +39,7 @@ export class Parser {
                     typa.type === TokenType.TIPIK ||
                     typa.type === TokenType.TINUOD
                 ) {
-                    return this.varDeclaration();
+                    return this.varDeclaration(false);
                 }
                 throw this.error(typa, "Invalid variable declaration. Please check your types!");
             }
@@ -55,10 +55,105 @@ export class Parser {
         if (this.match(TokenType.IPAKITA)) return this.printStatement();
         if (this.match(TokenType.SUGOD)) return this.blockStatement();
         if (this.match(TokenType.DAWAT)) return this.dawatStatement();
+        if (this.match(TokenType.MUGNA)) return this.varDeclaration(false);
+        if (this.match(TokenType.KATAPUSAN)) return this.expressionStatement();
+        if (this.match(TokenType.KUNG)) return this.ifStatement();
+        if (this.match(TokenType.ALANGSA)) return this.loopStatement();
 
         return this.expressionStatement();
     }
 
+    private loopStatement(): Statement {
+        this.consume(TokenType.OpenParen, "Expect '(' after 'ALANG SA'.");
+    
+        // Parse initializer
+        let initializer: Statement | null;
+    
+        if (this.check(TokenType.MUGNA)) {
+            this.advance(); // consume 'MUGNA'
+            initializer = this.varDeclaration(true);
+        } else if (this.check(TokenType.Identifier) && this.checkNext(TokenType.Assign)) {
+            initializer = new ExpressionStatement(this.expression());
+        } else if (!this.check(TokenType.Comma)) {
+            initializer = new ExpressionStatement(this.expression());
+        } else {
+            initializer = null;
+        }
+    
+        this.consume(TokenType.Comma, "Expect ',' after loop initializer.");
+    
+        // Parse condition
+        let condition: Expression | null = null;
+        if (!this.check(TokenType.Comma)) {
+            condition = this.expression();
+        }
+        this.consume(TokenType.Comma, "Expect ',' after loop condition.");
+    
+        // Parse increment
+        let increment: Expression | null = null;
+        if (!this.check(TokenType.CloseParen)) {
+            increment = this.expression();
+        }
+        this.consume(TokenType.CloseParen, "Expect ')' after for clauses.");
+    
+        this.consume(TokenType.PUNDOK, "Expect 'PUNDOK' to start the block.");
+    
+        let body = this.blockStatement();
+    
+        if (increment !== null) {
+            body = new Block([
+                body,
+                new ExpressionStatement(increment)
+            ]);
+        }
+    
+        if (condition === null) {
+            condition = new Literal(true);
+        }
+    
+        body = new WhileStatement(condition, body);
+    
+        if (initializer !== null) {
+            body = new Block([
+                initializer,
+                body
+            ]);
+        }
+    
+        return body;
+    }
+    
+    private ifStatement(): Statement {
+        this.consume(TokenType.OpenParen, "Expect '(' after 'KUNG'.");
+        const condition: Expression = this.expression();
+        this.consume(TokenType.CloseParen, "Expect ')' after condition.");
+    
+        this.consume(TokenType.PUNDOK, "Expect 'PUNDOK' to start the block.");
+        const thenBranch: Statement = this.blockStatement();
+    
+        const elseIfBranches: { condition: Expression, block: Statement }[] = [];
+        let elseBranch: Statement | null = null;
+    
+        while (this.match(TokenType.KUNGDILI)) {
+            this.consume(TokenType.OpenParen, "Expect '(' after 'KUNG DILI'.");
+            const elseifCondition = this.expression();
+            this.consume(TokenType.CloseParen, "Expect ')' after condition.");
+    
+            this.consume(TokenType.PUNDOK, "Expect 'PUNDOK' to start the block.");
+            const elseifBlock = this.blockStatement();
+    
+            elseIfBranches.push({ condition: elseifCondition, block: elseifBlock });
+        }
+    
+        if (this.match(TokenType.KUNGWALA)) {
+            this.consume(TokenType.PUNDOK, "Expect 'PUNDOK' to start the else block.");
+            elseBranch = this.blockStatement();
+        }
+    
+        return new IfElseIfElseStatement(condition, thenBranch, elseIfBranches, elseBranch);
+    }
+    
+    
     private printStatement(): Statement {
         const values: Expression[] = [];
         
@@ -96,12 +191,24 @@ export class Parser {
         return new ExpressionStatement(expr);
     }
 
-    private varDeclaration(): Statement {
-        const type: Token = this.consumes(
-            [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINUOD],
-            "Expected type before variable name."
-        );
+    private checkNext(type: TokenType): boolean {
+        if (this.current + 1 >= this.tokens.length) return false;
+        return this.tokens[this.current + 1].type === type;
+    }
     
+
+    private varDeclaration(isLoop: boolean): Statement {
+        let type: Token | null = null;
+
+        if(!isLoop) {
+            type = this.consumes(
+                [TokenType.NUMERO, TokenType.LETRA, TokenType.TIPIK, TokenType.TINUOD],
+                "Expected type before variable name."
+            );
+        } else {
+           type = new Token(TokenType.NUMERO, "NUMERO", null, this.current)
+        }
+        
         const declarations: { name: Token; initializer: Expression | null }[] = [];
     
         do {
@@ -143,6 +250,7 @@ export class Parser {
             const leftValue = this.evaluate(expression.left);
             const rightValue = this.evaluate(expression.right);
     
+            // Handle comparison operators
             if (typeof leftValue === 'boolean' && typeof rightValue === 'boolean') {
                 switch (expression.operator.lexeme) {
                     case "==":
@@ -162,12 +270,32 @@ export class Parser {
                         return leftValue === rightValue;
                     case '<>':
                         return leftValue !== rightValue;
+                    // Add arithmetic operations
+                    case '+':
+                        return leftValue + rightValue;
+                    case '-':
+                        return leftValue - rightValue;
+                    case '*':
+                        return leftValue * rightValue;
+                    case '/':
+                        return leftValue / rightValue;
+                }
+            }
+    
+            // Handle string concatenation
+            if (expression.operator.lexeme === '+') {
+                if (typeof leftValue === 'string' || typeof rightValue === 'string') {
+                    return String(leftValue) + String(rightValue);
                 }
             }
         }
     
         if (expression instanceof Literal) {
             return expression.value;
+        }
+    
+        if (expression instanceof Grouping) {
+            return this.evaluate(expression.expression);
         }
     
         return false;
@@ -196,16 +324,63 @@ export class Parser {
         return false;
     }
 
-    private blockStatement(): Statement {
-        const statements: Statement[] = [];
+    private or(): Expression {
+        let expr: Expression = this.and();
 
-        while(!this.check(TokenType.KATAPUSAN) && !this.isAtEnd()) {
-            statements.push(this.statement());
+        while (this.match(TokenType.O)) {
+            const operator: Token = this.previous();
+            const right: Expression = this.and();
+            expr = new Binary(expr, operator, right);
         }
 
-        this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' after block");
-        return new Block(statements);
+        return expr;
     }
+
+    private and(): Expression {
+        let expr: Expression = this.equality();
+
+        while (this.match(TokenType.UG)) {
+            const operator: Token = this.previous();
+            const right: Expression = this.equality();
+            expr = new Binary(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private evaluateLogicalExpression(expr: Binary): any {
+        const leftValue = this.evaluate(expr.left);
+
+        if (expr.operator.type === TokenType.O) {
+            return leftValue || this.evaluate(expr.right);
+        } else {
+            if (!this.isTruthy(leftValue)) {
+                return leftValue;
+            }
+        }
+        return this.evaluate(expr.right);
+    }
+
+    private blockStatement(): Statement {
+        if (this.match(TokenType.LeftBracket)) {
+            const statements: Statement[] = [];
+            while (!this.check(TokenType.RightBracket) && !this.isAtEnd()) {
+                statements.push(this.declaration());
+            }
+            this.consume(TokenType.RightBracket, "Expect '}' after block.");
+            return new Block(statements);
+        } else if (this.match(TokenType.SUGOD)) {
+            const statements: Statement[] = [];
+            while (!this.check(TokenType.KATAPUSAN) && !this.isAtEnd()) {
+                statements.push(this.declaration());
+            }
+            this.consume(TokenType.KATAPUSAN, "Expect 'KATAPUSAN' after block.");
+            return new Block(statements);
+        }
+    
+        throw this.error(this.peek(), "Expect '{' or 'SUGOD' to start a block.");
+    }
+    
 
     private expression(): Expression {
         return this.assignment();
@@ -321,10 +496,22 @@ export class Parser {
             let right: Expression = this.unary();
             return new Unary(operator, right);
         }
-
-        return this.primary();
+    
+        return this.postfix(); 
     }
 
+    private postfix(): Expression {
+        let expr = this.primary();
+    
+        // Check for one or more postfix operators after the primary expression
+        while (this.match(TokenType.PlusPlus)) {
+            const operator = this.previous();
+            expr = new Postfix(operator, expr);
+        }
+    
+        return expr;
+    }
+    
     
 
     private primary(): Expression {
@@ -332,6 +519,7 @@ export class Parser {
         if (this.match(TokenType.Number, TokenType.String)) {
             return new Literal(this.previous().literal);
         }
+
     
         if (this.match(TokenType.BOOLEAN)) {
             return new Literal(this.previous().literal);
@@ -354,6 +542,10 @@ export class Parser {
         if (this.match(TokenType.DOLLAR)) {
             return new Literal("\n");
         }
+
+        if (this.match(TokenType.Whitespace)) {
+            return new Literal(this.previous().literal);
+        };
 
         if(this.match(TokenType.ESCAPECODE)){
             let value : string = this.previous().literal
@@ -404,4 +596,10 @@ export class Parser {
         console.error(`Error at token: ${token.type} (${token.lexeme}) at position ${this.current} - ${message}`);
         return new ParseError();
     }
+
+    private isTruthy(leftValue: string | number | boolean): boolean {
+        return !!leftValue;
+    }
 }
+
+

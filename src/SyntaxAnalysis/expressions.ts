@@ -71,3 +71,10 @@ export class SpecialValue extends Expression {
         this.value = value;
     }
 }
+
+export class Postfix extends Expression {
+    constructor(
+        public operator: Token,
+        public operand: Expression
+    ) { super(); }
+}

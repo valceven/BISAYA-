@@ -1,4 +1,14 @@
 SUGOD
-	MUGNA NUMERO x, z
-	MUGNA TINUOD NUMERO="OO"
+    MUGNA NUMERO num
+    ALANGSA (num=1, num<=7, num++)  --Initialization, condition, and increment
+    PUNDOK {
+        KUNG (num < 5)
+        PUNDOK{
+            IPAKITA: "The number is less than five: " & num
+        }
+        KUNGWALA 
+        PUNDOK {
+            IPAKITA: "The number is not less than five."
+        }
+    }
 KATAPUSAN

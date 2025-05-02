@@ -1,3 +1,7 @@
 SUGOD
-	MUGNA NUMERO 7x
+	MUGNA NUMERO ctr
+	ALANGSA (ctr=1, ctr<=10, ctr++)
+		PUNDOK{
+			IPAKITA: ctr & ' '
+		}
 KATAPUSAN

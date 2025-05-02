@@ -18,12 +18,9 @@ async function runInput(input: string) {
     try {
         const lexer = new Lexer(input);
         const tokens = lexer.tokenize();
-        console.log(tokens);
+        console.log("Tokens:", tokens); // ✅ Log tokens for debugging  
         const parser = new Parser(tokens);
         const statements: Statement[] = parser.parse();
-
-        // console.log("AST:", statements);
-
         await interpreter.interpret(statements);
 
     } catch (error: any) {

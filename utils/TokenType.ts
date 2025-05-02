@@ -1,6 +1,6 @@
 export enum TokenType {
     // Single-character tokens
-    OpenParen, CloseParen, Comma, Dot, Plus, Minus, Star, Slash, Modulo,
+    OpenParen, CloseParen, Comma, Dot, Plus, Minus, Star, Slash, Modulo,PlusPlus,
     
     // One or two character tokens
     Bang, BangEqual, Assign, EqualEqual, Greater, GreaterEqual,
@@ -12,7 +12,7 @@ export enum TokenType {
     // Keywords
     UG, O, MUGNA, SUGOD, KATAPUSAN, IPAKITA, DAWAT,
     KUNG, PUNDOK, KUNGWALA, KUNGDILI, ALANGSA, WALA,
-    NUMERO, TIPIK, LETRA, TINUOD,
+    NUMERO, TIPIK, LETRA, TINUOD, Whitespace,
     
     // Special tokens
     EOF, INDENT, DEDENT,
