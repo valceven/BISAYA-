@@ -24,4 +24,5 @@ export enum TokenType {
     RightBracket, // For the ']' token
     Hash,      // For the '#' token
     ESCAPECODE,
+    SAMTANG
 }

@@ -22,9 +22,7 @@ export class Parser {
         while (!this.check(TokenType.KATAPUSAN) && !this.isAtEnd()) {
             statements.push(this.declaration());
         }
-    
-        //this.consume(TokenType.KATAPUSAN, "Expected 'KATAPUSAN' at end of block");
-    
+        
         return statements;
     }
     
@@ -58,19 +56,45 @@ export class Parser {
         if (this.match(TokenType.MUGNA)) return this.varDeclaration(false);
         if (this.match(TokenType.KATAPUSAN)) return this.expressionStatement();
         if (this.match(TokenType.KUNG)) return this.ifStatement();
+        if (this.match(TokenType.SAMTANG)) return this.whileStatement();
         if (this.match(TokenType.ALANGSA)) return this.loopStatement();
 
         return this.expressionStatement();
     }
 
+    private whileStatement(): Statement {
+        try {
+            this.consume(TokenType.OpenParen, "Expect '(' after 'SAMTANG'.");
+        
+            const condition: Expression = this.expression();
+            
+            this.consume(TokenType.CloseParen, "Expect ')' after condition.");
+            
+            this.consume(TokenType.PUNDOK, "Expect 'PUNDOK' after while condition.");
+            this.consume(TokenType.LeftBracket, "Expect '{' after 'PUNDOK'.");
+            
+            const statements: Statement[] = [];
+            while (!this.check(TokenType.RightBracket) && !this.isAtEnd()) {
+                statements.push(this.declaration());
+            }
+            
+            this.consume(TokenType.RightBracket, "Expect '}' after block.");
+            
+            return new WhileStatement(condition, new Block(statements));
+        } catch (e) {
+            console.error("While loop parsing error:", e);
+            throw e;
+        }
+    }
+    
+
     private loopStatement(): Statement {
         this.consume(TokenType.OpenParen, "Expect '(' after 'ALANG SA'.");
     
-        // Parse initializer
         let initializer: Statement | null;
     
         if (this.check(TokenType.MUGNA)) {
-            this.advance(); // consume 'MUGNA'
+            this.advance();
             initializer = this.varDeclaration(true);
         } else if (this.check(TokenType.Identifier) && this.checkNext(TokenType.Assign)) {
             initializer = new ExpressionStatement(this.expression());
@@ -82,14 +106,12 @@ export class Parser {
     
         this.consume(TokenType.Comma, "Expect ',' after loop initializer.");
     
-        // Parse condition
         let condition: Expression | null = null;
         if (!this.check(TokenType.Comma)) {
             condition = this.expression();
         }
         this.consume(TokenType.Comma, "Expect ',' after loop condition.");
     
-        // Parse increment
         let increment: Expression | null = null;
         if (!this.check(TokenType.CloseParen)) {
             increment = this.expression();
@@ -119,7 +141,6 @@ export class Parser {
                 body
             ]);
         }
-    
         return body;
     }
     
@@ -152,6 +173,9 @@ export class Parser {
     
         return new IfElseIfElseStatement(condition, thenBranch, elseIfBranches, elseBranch);
     }
+
+    
+    
     
     
     private printStatement(): Statement {
@@ -161,15 +185,14 @@ export class Parser {
             if (this.match(TokenType.LeftBracket)) {
                 if (this.match(TokenType.Hash)) {
                     this.consume(TokenType.RightBracket, "Expect ']' to close special value.");
-                    values.push(new SpecialValue('#')); // Add special value directly
+                    values.push(new SpecialValue('#'));
                 } else {
                     throw this.error(this.peek(), "Expect '#' inside brackets.");
                 }
             } else {
-                values.push(this.expression()); // Handle other expressions
+                values.push(this.expression());
             }
-        } while (this.match(TokenType.And)); 
-        
+        } while (this.match(TokenType.And));         
         return new Print(values);
     }
 
@@ -243,14 +266,11 @@ export class Parser {
         return new VariableDeclaration(type, declarations);
     }
     
-
-    
     private evaluate(expression: Expression): boolean | string | number {
         if (expression instanceof Binary) {
             const leftValue = this.evaluate(expression.left);
             const rightValue = this.evaluate(expression.right);
     
-            // Handle comparison operators
             if (typeof leftValue === 'boolean' && typeof rightValue === 'boolean') {
                 switch (expression.operator.lexeme) {
                     case "==":
@@ -270,7 +290,6 @@ export class Parser {
                         return leftValue === rightValue;
                     case '<>':
                         return leftValue !== rightValue;
-                    // Add arithmetic operations
                     case '+':
                         return leftValue + rightValue;
                     case '-':
@@ -282,7 +301,6 @@ export class Parser {
                 }
             }
     
-            // Handle string concatenation
             if (expression.operator.lexeme === '+') {
                 if (typeof leftValue === 'string' || typeof rightValue === 'string') {
                     return String(leftValue) + String(rightValue);

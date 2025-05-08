@@ -2,7 +2,6 @@ import * as readline from "readline";
 import * as fs from "fs"; // ✅ Add filesystem module
 import { Lexer } from "./src/LexicalAnalysis/Lexer";
 import { Parser } from "./src/SyntaxAnalysis/parser";
-import { Expression } from "./src/SyntaxAnalysis/Expressions";
 import { Interpreter } from "./src/SyntaxAnalysis/Interpreter";
 import { Statement } from "./src/SyntaxAnalysis/Statements";
 
@@ -18,11 +17,11 @@ async function runInput(input: string) {
     try {
         const lexer = new Lexer(input);
         const tokens = lexer.tokenize();
-        console.log("Tokens:", tokens); // ✅ Log tokens for debugging  
+        //console.log(tokens);
         const parser = new Parser(tokens);
         const statements: Statement[] = parser.parse();
-        await interpreter.interpret(statements);
-
+        await interpreter.interpret(statements);    
+        console.log("Execution Successful");
     } catch (error: any) {
         console.error("Error:", error.message);
     }
@@ -45,12 +44,12 @@ async function repl() {
             }
 
             const fileContent = fs.readFileSync(filename, "utf-8");
-            await runInput(fileContent);  // await here too
+            await runInput(fileContent);
             repl();
             return;
         }
 
-        await runInput(input);  // await here
+        await runInput(input);
         repl();
     });
 }

@@ -95,68 +95,54 @@ export class Interpreter {
     private executePrint(statement: Print): void {
         const values = statement.values.map(expr => this.evaluate(expr));
         const output = values.map(value => this.stringify(value)).join("");
-        this.outputBuffer += output + "\n";  // Add to buffer with newline
-        console.log(output);  // Print to terminal immediately
+        this.outputBuffer += output + "\n";
+        console.log(output);
     }
 
 
-
-    private executeDawat(statement: DawatStatement): Promise<void> {        
+    private executeDawat(statement: DawatStatement): Promise<void> {
         return new Promise((resolve, reject) => {
-            // Create a one-time listener for the 'line' event
-            const onLine = (line: string) => {
+            const online = (line:string) => {
                 try {
-                    // Remove this listener so it doesn't interfere with future input
-                    this.rl.removeListener('line', onLine);
-                    
-                    const inputString = line.trim();                    
+                    this.rl.removeListener('line',online);
+        
+                    const inputString = line.trim();
                     const inputValues = inputString.split(/\s+/);
-                    
+        
                     if (inputValues.length < statement.names.length) {
-                        throw new Error(`Not enough input values. Expected ${statement.names.length}, got ${inputValues.length}.`);
+                        throw new Error("Dawat statement error");
                     }
-                    
+
                     for (let i = 0; i < statement.names.length; i++) {
-                        const nameToken = statement.names[i];
-                        
-                        if (this.environment.contains(nameToken.lexeme)) {
+                        const tokenName = statement.names[i];
+
+                        if (this.environment.contains(tokenName.lexeme)) {
                             const value = this.parseValue(inputValues[i]);
-                            this.environment.assign(nameToken, value);
+                            this.environment.assign(tokenName, value);
                         } else {
-                            throw new Error(`Variable '${nameToken.lexeme}' is not defined.`);
+                            throw new Error("Variable not found");
                         }
                     }
                     resolve();
                 } catch (error) {
-                    console.error(error.message);
+                    console.error(error);
                     reject(error);
                 }
             };
-            
-            // Listen for the next line of input
-            this.rl.once('line', onLine);
-        });
+            this.rl.once('line', online)
+        })
     }
     
-    // Make sure this helper method is correctly implemented
     private parseValue(token: string): any {
-        // Try to parse as number first
         const numValue = Number(token);
         if (!isNaN(numValue)) {
             return numValue;
         }
         
-        // Handle boolean values
         if (token === "OO") return true;
         if (token === "DILI") return false;
         
-        // Return as string by default
         return token;
-    }
-
-    private scan(input: string): string[] {
-        const tokens = input.split(/\s+/);
-        return tokens;
     }
     
     private executeExpression(statement: ExpressionStatement): void {

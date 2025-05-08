@@ -18,5 +18,6 @@ export const KEYWORDS = new Map<string, TokenType>([
     ["TIPIK", TokenType.TIPIK],
     ["LETRA", TokenType.LETRA],
     ["TINUOD", TokenType.TINUOD],
-    ["BOOLEAN", TokenType.BOOLEAN]
+    ["BOOLEAN", TokenType.BOOLEAN],
+    ["SAMTANG", TokenType.SAMTANG]
 ]);

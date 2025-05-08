@@ -132,16 +132,10 @@ export class Lexer {
 
         const value: string = this.sourceCode.substring(bracketStart, this.current - 1);
          
-        // if(value.length == 0){
-
-        // }
         console.log(value);
 
         this.addToken(TokenType.ESCAPECODE, value);
-
     }
-
-   
 
     private advance(): string {
         return this.sourceCode.charAt(this.current++);
@@ -181,11 +175,10 @@ export class Lexer {
             return;
         }
 
-        this.advance(); // Consume the closing quote
+        this.advance();
 
         const value: string = this.sourceCode.substring(this.start + 1, this.current - 1);
         
-        // Handle special string literals for boolean values
         if(value === "OO") {
             this.addToken(TokenType.BOOLEAN, true);
             return;
